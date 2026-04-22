@@ -1,0 +1,23 @@
+# @package _global_
+#
+# Experiment 6: Data Encoding Strategies
+# Compare amplitude, angle, and IQP encoding
+# Goal: Determine which encoding best leverages quantum Hilbert space
+
+defaults:
+  - override /dataset: fashion_mnist
+  - override /model: qcnn_pennylane
+
+seed: 42
+
+dataset:
+  binary_classes: [0, 6]  # T-shirt vs Shirt (hard pair)
+  subsample: 2000
+
+training:
+  epochs: 40
+  batch_size: 32
+  learning_rate: 0.001
+
+# Sweep via: python run/pipeline/train.py -m experiment=exp6_encoding_study \
+#   model.encoding.method=amplitude,angle,iqp

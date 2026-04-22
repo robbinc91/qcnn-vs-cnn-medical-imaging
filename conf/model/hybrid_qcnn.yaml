@@ -1,0 +1,28 @@
+name: hybrid_qcnn
+type: hybrid
+framework: pennylane
+
+# Classical encoder -> Quantum processing -> Classical decoder
+classical_encoder:
+  conv_channels: [8, 16]
+  kernel_size: 3
+  pool_size: 2
+  activation: relu
+
+quantum:
+  num_qubits: 8
+  num_layers: 3
+  entanglement: circular
+  ansatz: strongly_entangling
+  measurement: expval
+  diff_method: best
+  device: default.qubit
+
+encoding:
+  method: angle
+  num_features: 8  # matches num_qubits
+
+classical_decoder:
+  fc_dims: [64]
+  dropout: 0.2
+  activation: relu

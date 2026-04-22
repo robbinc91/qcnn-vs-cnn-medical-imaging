@@ -1,0 +1,11 @@
+name: mnist
+num_classes: 10
+image_size: 28
+channels: 1
+data_dir: data/
+train_split: 0.8
+val_split: 0.1
+test_split: 0.1
+# Subsample for quantum experiments (full dataset too slow for quantum simulation)
+subsample: null  # set to int (e.g. 1000) for quick experiments
+binary_classes: null  # set to [3, 6] for binary classification subset

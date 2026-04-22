@@ -1,0 +1,10 @@
+name: fashion_mnist
+num_classes: 10
+image_size: 28
+channels: 1
+data_dir: data/
+train_split: 0.8
+val_split: 0.1
+test_split: 0.1
+subsample: null
+binary_classes: null

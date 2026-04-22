@@ -1,0 +1,26 @@
+name: qcnn_pennylane
+type: quantum
+framework: pennylane
+
+quantum:
+  num_qubits: 8
+  num_layers: 4
+  entanglement: linear  # linear, circular, full
+  ansatz: strongly_entangling  # strongly_entangling, basic_entangler, custom
+  measurement: expval  # expval, probs, sample
+  diff_method: best  # best, parameter-shift, adjoint, backprop
+  device: default.qubit  # default.qubit, lightning.qubit
+
+encoding:
+  method: amplitude  # amplitude, angle, iqp
+  num_features: 256  # after classical preprocessing
+
+classical_pre:
+  # Classical feature extraction before quantum circuit
+  enabled: true
+  conv_channels: [4]
+  kernel_size: 3
+  pool_to_size: 4  # downsample to 4x4 = 16 features per channel
+
+classifier:
+  fc_dims: []  # quantum output directly to classes

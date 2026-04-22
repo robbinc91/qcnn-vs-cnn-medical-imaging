@@ -1,0 +1,20 @@
+# @package _global_
+#
+# Experiment 2: Parameter Efficiency
+# Compare models at matched parameter budgets
+# Goal: Show QCNN advantage in low-parameter regime
+
+defaults:
+  - override /dataset: mnist
+  - override /model: classical_cnn_small
+
+seed: 42
+
+dataset:
+  binary_classes: [3, 6]
+  subsample: 2000
+
+training:
+  epochs: 50
+  batch_size: 32
+  learning_rate: 0.001

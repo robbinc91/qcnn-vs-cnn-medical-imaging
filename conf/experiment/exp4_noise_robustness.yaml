@@ -1,0 +1,28 @@
+# @package _global_
+#
+# Experiment 4: Noise Robustness
+# Compare classical vs quantum models under noisy inputs
+# Goal: Test if quantum entanglement provides noise resilience
+
+defaults:
+  - override /dataset: mnist
+  - override /model: hybrid_qcnn
+
+seed: 42
+
+dataset:
+  binary_classes: [3, 6]
+  subsample: 2000
+
+training:
+  epochs: 30
+  batch_size: 32
+  learning_rate: 0.001
+
+# Noise injection settings (applied at dataset level)
+noise:
+  enabled: true
+  types: [gaussian, salt_pepper, rotation]
+  gaussian_std: [0.0, 0.1, 0.2, 0.3, 0.5]
+  salt_pepper_prob: [0.0, 0.05, 0.1, 0.15, 0.2]
+  rotation_degrees: [0, 5, 10, 15, 30]

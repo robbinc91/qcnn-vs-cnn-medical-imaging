@@ -1,0 +1,20 @@
+# @package _global_
+#
+# Experiment 1: Baseline Comparison
+# Compare classical CNN vs QCNN on binary classification (digits 3 vs 6)
+# Goal: Establish baseline performance gap
+
+defaults:
+  - override /dataset: mnist
+  - override /model: classical_cnn
+
+seed: 42
+
+dataset:
+  binary_classes: [3, 6]
+  subsample: 2000
+
+training:
+  epochs: 30
+  batch_size: 32
+  learning_rate: 0.001

@@ -1,0 +1,30 @@
+name: qcnn_qiskit
+type: quantum
+framework: qiskit
+
+quantum:
+  num_qubits: 8
+  num_layers: 4
+  feature_map: zz_feature_map  # zz_feature_map, pauli_feature_map
+  ansatz: real_amplitudes  # real_amplitudes, efficient_su2, two_local
+  entanglement: circular
+  reps: 2
+
+encoding:
+  method: amplitude
+  num_features: 256
+
+classical_pre:
+  enabled: true
+  conv_channels: [4]
+  kernel_size: 3
+  pool_to_size: 4
+
+classifier:
+  fc_dims: []
+
+# Qiskit-specific runtime options
+runtime:
+  backend: aer_simulator  # aer_simulator, statevector_simulator
+  shots: 1024
+  noise_model: null  # null, ibm_brisbane, ibm_osaka

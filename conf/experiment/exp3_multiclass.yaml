@@ -1,0 +1,20 @@
+# @package _global_
+#
+# Experiment 3: Multi-class Scaling
+# Test how QCNN scales from binary to 4-class to 10-class
+# Goal: Evaluate quantum advantage degradation with more classes
+
+defaults:
+  - override /dataset: mnist
+  - override /model: hybrid_qcnn
+
+seed: 42
+
+dataset:
+  binary_classes: null  # full 10-class
+  subsample: 5000
+
+training:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.001

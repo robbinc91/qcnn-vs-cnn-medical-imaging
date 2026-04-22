@@ -1,0 +1,24 @@
+# @package _global_
+#
+# Experiment 7: Framework Comparison
+# Same QCNN architecture in PennyLane vs Qiskit
+# Goal: Evaluate framework-level differences in accuracy and training time
+
+defaults:
+  - override /dataset: mnist
+  - override /model: qcnn_pennylane
+
+seed: 42
+
+dataset:
+  binary_classes: [3, 6]
+  subsample: 1000
+
+training:
+  epochs: 30
+  batch_size: 32
+  learning_rate: 0.001
+
+# Run both:
+# python run/pipeline/train.py experiment=exp7_framework_comparison model=qcnn_pennylane
+# python run/pipeline/train.py experiment=exp7_framework_comparison model=qcnn_qiskit

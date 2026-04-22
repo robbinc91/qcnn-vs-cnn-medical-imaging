@@ -1,0 +1,12 @@
+name: classical_cnn_small
+type: classical
+
+# Parameter-matched to QCNN for fair comparison
+architecture:
+  conv_channels: [4, 8]
+  kernel_size: 3
+  pool_size: 2
+  fc_dims: [32]
+  dropout: 0.1
+  activation: relu
+  batch_norm: false

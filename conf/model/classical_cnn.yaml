@@ -1,0 +1,11 @@
+name: classical_cnn
+type: classical
+
+architecture:
+  conv_channels: [16, 32]
+  kernel_size: 3
+  pool_size: 2
+  fc_dims: [128]
+  dropout: 0.25
+  activation: relu
+  batch_norm: true
