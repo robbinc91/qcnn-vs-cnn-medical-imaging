@@ -64,3 +64,6 @@ datatrain/
 
 # Generated Word documents
 *.docx
+
+# Paper sources and build (kept local only)
+paper/

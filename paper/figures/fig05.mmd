@@ -1,9 +1,0 @@
-flowchart LR
-  I["Input"] --> E["Encoder: CompetitiveDense blocks<br/>uniform 160 ch + MaxPool (indices)"]
-  E --> B["Bottleneck<br/>CompetitiveDense"]
-  B --> D["Decoder: MaxUnpool (indices) +<br/>CompetitiveDense"]
-  D --> H["1x1 conv -> 4 classes"]
-  subgraph block["CompetitiveDense unit (x3)"]
-    direction LR
-    c["Conv"] --> bn["BatchNorm"] --> p["PReLU"] --> mx["max(out, skip)"]
-  end

@@ -1,9 +1,0 @@
-flowchart LR
-  I["Entrada"] --> E["Codif.: etapas DoubleConv<br/>[64,128,256,352], 4x MaxPool"]
-  E --> B["Cuello de botella<br/>DoubleConv"]
-  B --> D["Decod.: ConvTranspose +<br/>DoubleConv, saltos concat"]
-  D --> H["conv 1x1 -> 4 clases"]
-  subgraph block["Bloque DoubleConv"]
-    direction LR
-    c1["Conv 3x3"] --> n1["BatchNorm"] --> r1["ReLU"] --> c2["Conv 3x3"] --> n2["BatchNorm"] --> r2["ReLU"]
-  end

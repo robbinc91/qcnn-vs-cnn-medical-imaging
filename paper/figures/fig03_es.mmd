@@ -1,9 +1,0 @@
-flowchart LR
-  I["Entrada"] --> E1["Etapa codif. 1"] --> E2["Etapa codif. 2"] --> E3["Etapa codif. 3"] --> E4["Etapa codif. 4"]
-  E4 --> B["Cuello de botella"]
-  B --> D4["Etapa decod. 4"] --> D3["Etapa decod. 3"] --> D2["Etapa decod. 2"] --> D1["Etapa decod. 1"]
-  D1 --> H["conv 1x1 -> 4 clases"]
-  E4 -. salto .-> D4
-  E3 -. salto .-> D3
-  E2 -. salto .-> D2
-  E1 -. salto .-> D1

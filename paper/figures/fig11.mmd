@@ -1,5 +1,0 @@
-flowchart LR
-  V["channel vector<br/>(B, n_q)"] --> AE["Angle embedding<br/>R_y(x_i) on each qubit"]
-  AE --> EL["Entangling layers<br/>(StronglyEntangling / RealAmplitudes)"]
-  EL --> RO["Readout:<br/>&lang;Z_i&rang; expectation per qubit"]
-  RO --> O["output vector<br/>(B, n_q)"]

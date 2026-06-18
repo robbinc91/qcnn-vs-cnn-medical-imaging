@@ -1,9 +1,0 @@
-flowchart TD
-  A["39 subjects<br/>a31..a70 except a37"] -->|"seed=42, subject-level"| B["Train: 27"]
-  A --> C["Validation: 6"]
-  A --> D["Test: 6"]
-  B --> E["Geometric + intensity<br/>augmentation"]
-  C --> F["No augmentation"]
-  D --> F
-  E --> M["Model training"]
-  F --> M

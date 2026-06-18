@@ -1,9 +1,0 @@
-flowchart LR
-  I["Input"] --> E1["Enc stage 1"] --> E2["Enc stage 2"] --> E3["Enc stage 3"] --> E4["Enc stage 4"]
-  E4 --> B["Bottleneck"]
-  B --> D4["Dec stage 4"] --> D3["Dec stage 3"] --> D2["Dec stage 2"] --> D1["Dec stage 1"]
-  D1 --> H["1x1 conv -> 4 classes"]
-  E4 -. skip .-> D4
-  E3 -. skip .-> D3
-  E2 -. skip .-> D2
-  E1 -. skip .-> D1
