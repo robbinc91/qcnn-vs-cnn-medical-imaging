@@ -1,0 +1,19 @@
+flowchart LR
+  I["Entrada"] --> E["Codif.: 5 niveles de<br/>bloques Inception (InstanceNorm)"]
+  E --> B["Cuello de botella<br/>Bloque Inception"]
+  B --> D["Decod.: ConvTranspose +<br/>Inception, saltos refinados por atención"]
+  D --> H["conv 1x1 -> 4 clases"]
+  subgraph inc["Bloque Inception"]
+    direction TB
+    b1["1x1"]
+    b2["3x3"]
+    b3["3x3 / 5x5"]
+    b4["pool + 1x1"]
+    b1 --> cat["concat"]
+    b2 --> cat
+    b3 --> cat
+    b4 --> cat
+  end
+  subgraph att["Refinamiento de saltos"]
+    cbam["CBAM: atención de canal + espacial"]
+  end

@@ -37,3 +37,30 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Generated reports, figures, and compiled documents
+partial.md
+full_paper.md
+methods_audit.md
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Patient/medical imaging data -- never commit
+datatrain/
+
+# Working backups
+.audit_backup_*/
+*.bak
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+*.toc
+*.synctex.gz
+
+# Generated Word documents
+*.docx

@@ -1,0 +1,15 @@
+# mipaim_unet for brainstem segmentation
+# Auto-selected channel widths (~17 M params in both 2D and 3D):
+#   2D: [90, 180, 360, 720, 1440] → ~17.3 M
+#   3D: [64, 128, 256, 512, 1024] → ~17.8 M
+# skip_connections_treatment_number reduced to 1 to limit memory overhead
+
+name: mipaim_unet
+type: classical
+
+# filters_dim: omitted → auto-selected from dataset.spatial_dims
+only_3x3_filters: true
+instance_normalization: true
+skip_connections_treatment_number: 1
+skip_connections_method: attention
+force_unet: false

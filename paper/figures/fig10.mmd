@@ -1,0 +1,14 @@
+flowchart LR
+  I["Input 1x80x80"] --> E1["Enc 1"] --> P1["pool"] --> E2["Enc 2"] --> P2["pool"] --> E3["Enc 3"] --> P3["pool"]
+  P3 --> B["Bottleneck features x"]
+  B --> GAP["Global avg pool -> C-vector"]
+  GAP --> PIN["Linear -> n_qubits, tanh*pi"]
+  PIN --> Q["Variational quantum circuit"]
+  Q --> POUT["Linear -> C"]
+  POUT --> ADD(("+"))
+  B --> ADD
+  ADD --> D3["Dec 3"] --> U2["up"] --> D2["Dec 2"] --> U1["up"] --> D1["Dec 1"]
+  D1 --> H["1x1 conv -> 4 classes"]
+  E3 -. skip .-> D3
+  E2 -. skip .-> D2
+  E1 -. skip .-> D1

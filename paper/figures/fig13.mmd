@@ -1,0 +1,10 @@
+flowchart TD
+  A["9 architectures x 2 dims<br/>= 18 configurations"] --> B["Train to ~17M params<br/>up to 400 ep, early stop"]
+  B --> C["Evaluate on 6 test subjects"]
+  C --> D["2D quantum native ~6.1M<br/>(NOT param-matched)"]
+  D --> E["Param-matched 2D rerun<br/>quantum 4-stage = 16.9M"]
+  C --> F["Foreground-only Dice"]
+  E --> F
+  F --> G["Honest full-volume 2D re-eval"]
+  G --> H["Aggregate + statistics"]
+  H --> R["Methods audit + corrections"]

@@ -1,0 +1,5 @@
+flowchart LR
+  V["vector de canales<br/>(B, n_q)"] --> AE["Codif. de ángulos<br/>R_y(x_i) por qubit"]
+  AE --> EL["Capas de entrelazamiento<br/>(StronglyEntangling / RealAmplitudes)"]
+  EL --> RO["Lectura:<br/>valor esp. &lang;Z_i&rang; por qubit"]
+  RO --> O["vector de salida<br/>(B, n_q)"]

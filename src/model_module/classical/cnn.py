@@ -1,93 +1,121 @@
-"""Classical CNN baselines for comparison with quantum models."""
+"""Classical CNN U-Net for 2-D or 3-D segmentation.
+
+Controlled by ``dataset.spatial_dims`` (2 or 3).  All conv/pool/norm ops
+are selected via the shared ``_ops.get_ops()`` helper.
+"""
 
 import logging
 from typing import Any, List
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
+from .._ops import get_ops
 from ..registry import register_model
 
 logger = logging.getLogger(__name__)
 
 
-class ConvBlock(nn.Module):
-    """Convolutional block: Conv2d -> [BatchNorm] -> ReLU -> MaxPool."""
+class DoubleConv(nn.Module):
+    """(Conv → [BN] → ReLU) × 2, with optional Dropout, dimension-agnostic."""
 
     def __init__(
         self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int,
-        pool_size: int,
+        in_ch: int,
+        out_ch: int,
+        ops,
         batch_norm: bool = True,
+        dropout: float = 0.0,
     ) -> None:
         super().__init__()
+        bias = not batch_norm
         layers: List[nn.Module] = [
-            nn.Conv2d(in_channels, out_channels, kernel_size, padding=kernel_size // 2),
+            ops.Conv(in_ch, out_ch, 3, padding=1, bias=bias),
+            ops.BatchNorm(out_ch) if batch_norm else nn.Identity(),
+            nn.ReLU(inplace=True),
+            ops.Conv(out_ch, out_ch, 3, padding=1, bias=bias),
+            ops.BatchNorm(out_ch) if batch_norm else nn.Identity(),
+            nn.ReLU(inplace=True),
         ]
-        if batch_norm:
-            layers.append(nn.BatchNorm2d(out_channels))
-        layers.extend([nn.ReLU(inplace=True), nn.MaxPool2d(pool_size)])
-        self.block = nn.Sequential(*layers)
+        if dropout > 0.0:
+            layers.append(ops.Dropout(p=dropout))
+        self.net = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.block(x)
+        return self.net(x)
 
 
 @register_model("classical_cnn")
+@register_model("classical_cnn_small")
 class ClassicalCNN(nn.Module):
-    """Standard CNN with configurable architecture."""
+    """U-Net for 2-D or 3-D semantic segmentation.
+
+    Config keys under ``model.architecture``:
+        conv_channels (list[int]): Encoder channel widths. Default: [16, 32, 64].
+        batch_norm (bool): Use BatchNorm. Default: True.
+        dropout (float): Decoder dropout. Default: 0.2.
+    ``dataset.spatial_dims`` selects 2-D or 3-D mode.
+    """
 
     def __init__(self, cfg: Any) -> None:
         super().__init__()
-        arch = cfg.model.architecture
-        channels = [cfg.dataset.channels] + list(arch.conv_channels)
-        conv_layers: List[nn.Module] = []
+        arch     = cfg.model.architecture
+        ops      = get_ops(cfg.dataset.spatial_dims)
+        # Auto-select ~17 M defaults with 4 downsamples per spatial_dims:
+        #   2D: [64, 128, 256, 352]   → ~17.0 M  (4 enc pools + bottleneck at /16)
+        #   3D: [38, 76, 156, 204]    → ~16.9 M  (4 enc pools + bottleneck at /16)
+        _default_chs = [64, 128, 256, 352] if ops.dims == 2 else [38, 76, 156, 204]
+        chs: List[int] = list(getattr(arch, "conv_channels", _default_chs))
+        in_ch    = cfg.dataset.channels
+        num_cls  = (
+            len(cfg.dataset.binary_classes)
+            if cfg.dataset.binary_classes
+            else cfg.dataset.num_classes
+        )
+        bn: bool  = arch.batch_norm
+        dp: float = arch.dropout
 
-        for i in range(len(arch.conv_channels)):
-            conv_layers.append(
-                ConvBlock(
-                    channels[i],
-                    channels[i + 1],
-                    arch.kernel_size,
-                    arch.pool_size,
-                    arch.batch_norm,
-                )
-            )
+        # Encoder
+        self.enc_blocks = nn.ModuleList()
+        ch_in = in_ch
+        for ch in chs:
+            self.enc_blocks.append(DoubleConv(ch_in, ch, ops, bn))
+            ch_in = ch
+        self.pool = ops.MaxPool(2)
 
-        self.features = nn.Sequential(*conv_layers)
-        self.flatten = nn.Flatten()
+        # Bottleneck
+        self.bottleneck = DoubleConv(chs[-1], chs[-1] * 2, ops, bn)
 
-        # Compute flattened size
-        feat_size = cfg.dataset.image_size
-        for _ in arch.conv_channels:
-            feat_size = feat_size // arch.pool_size
-        flat_dim = arch.conv_channels[-1] * feat_size * feat_size
+        # Decoder
+        self.up_convs  = nn.ModuleList()
+        self.dec_blocks = nn.ModuleList()
+        ch_in = chs[-1] * 2
+        for ch in reversed(chs):
+            self.up_convs.append(ops.ConvTranspose(ch_in, ch, 2, stride=2))
+            self.dec_blocks.append(DoubleConv(ch * 2, ch, ops, bn, dp))
+            ch_in = ch
 
-        fc_layers: List[nn.Module] = []
-        prev_dim = flat_dim
-        for dim in arch.fc_dims:
-            fc_layers.extend([
-                nn.Linear(prev_dim, dim),
-                nn.ReLU(inplace=True),
-                nn.Dropout(arch.dropout),
-            ])
-            prev_dim = dim
+        self.head = ops.Conv(chs[0], num_cls, 1)
+        self._ops = ops
 
-        num_classes = len(cfg.dataset.binary_classes) if cfg.dataset.binary_classes else cfg.dataset.num_classes
-        fc_layers.append(nn.Linear(prev_dim, num_classes))
-        self.classifier = nn.Sequential(*fc_layers)
+        logger.info(
+            f"ClassicalCNN U-Net {ops.dims}D | channels={chs} | "
+            f"in={in_ch}ch → out={num_cls} classes"
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.features(x)
-        x = self.flatten(x)
-        return self.classifier(x)
+        skips: List[torch.Tensor] = []
+        for enc in self.enc_blocks:
+            x = enc(x)
+            skips.append(x)
+            x = self.pool(x)
 
+        x = self.bottleneck(x)
 
-@register_model("classical_cnn_small")
-class ClassicalCNNSmall(ClassicalCNN):
-    """Small CNN with matched parameter count to QCNN."""
+        for up, dec, skip in zip(self.up_convs, self.dec_blocks, reversed(skips)):
+            x = up(x)
+            if x.shape != skip.shape:
+                x = self._ops.interpolate(x, skip.shape[2:])
+            x = dec(torch.cat([skip, x], dim=1))
 
-    pass  # Same architecture, different config drives smaller size
+        return self.head(x)

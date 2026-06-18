@@ -1,0 +1,3 @@
+- +experiment=exp_brainstem
+- model=qcnn_pennylane_brainstem
+- dataset.spatial_dims=2

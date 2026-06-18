@@ -1,0 +1,27 @@
+# SwinUNETR for brainstem segmentation (80×80×96 input, 4 classes)
+#
+# Reference: Hatamizadeh et al., MICCAI 2022  https://arxiv.org/abs/2201.01266
+# Implementation: MONAI (monai.networks.nets.SwinUNETR)
+#
+# Auto-selected to ~17 M params per spatial_dims if not specified:
+#   2D: feature_size=36, depths=[2,4,4,4] → ~16.8 M
+#   3D: feature_size=24, depths=[2,4,4,4] → ~17.1 M
+
+name: swin_unetr
+type: classical
+
+# feature_size and depths: omitted → auto-selected from dataset.spatial_dims
+
+# Multi-head attention heads per stage (must be consistent with feature_size)
+# feature_size * 2^i must be divisible by num_heads[i]
+num_heads: [3, 6, 12, 24]
+
+# Local attention window size (cubic: window×window×window voxels after patch embed)
+window_size: 7
+
+# Regularisation
+drop_rate: 0.0
+attn_drop_rate: 0.0
+
+# Gradient checkpointing: trades compute for memory (recommended for 3-D volumes)
+use_checkpoint: true

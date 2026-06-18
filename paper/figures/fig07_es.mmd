@@ -1,0 +1,8 @@
+flowchart LR
+  I["Entrada -> partición en parches"] --> S1["Etapa Swin 1<br/>(W-MSA / SW-MSA)"] --> S2["Etapa Swin 2"] --> S3["Etapa Swin 3"] --> S4["Etapa Swin 4"]
+  S4 --> B["Cuello de botella"]
+  B --> D["Decod. CNN<br/>(ConvTranspose), saltos concat"]
+  D --> H["conv 1x1 -> 4 clases"]
+  S3 -. salto .-> D
+  S2 -. salto .-> D
+  S1 -. salto .-> D

@@ -1,0 +1,9 @@
+flowchart TD
+  A["39 sujetos<br/>a31..a70 excepto a37"] -->|"seed=42, subject-level"| B["Entren.: 27"]
+  A --> C["Validación: 6"]
+  A --> D["Prueba: 6"]
+  B --> E["Aumentación geométrica<br/>+ de intensidad"]
+  C --> F["Sin aumentación"]
+  D --> F
+  E --> M["Entrenamiento del modelo"]
+  F --> M

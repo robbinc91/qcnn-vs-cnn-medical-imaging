@@ -1,0 +1,9 @@
+flowchart LR
+  I["Entrada"] --> E["Codif.: bloques CompetitiveDense<br/>160 can. uniforme + MaxPool (índices)"]
+  E --> B["Cuello de botella<br/>CompetitiveDense"]
+  B --> D["Decod.: MaxUnpool (índices) +<br/>CompetitiveDense"]
+  D --> H["conv 1x1 -> 4 clases"]
+  subgraph block["Unidad CompetitiveDense (x3)"]
+    direction LR
+    c["Conv"] --> bn["BatchNorm"] --> p["PReLU"] --> mx["max(out, salto)"]
+  end

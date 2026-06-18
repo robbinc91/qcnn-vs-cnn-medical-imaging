@@ -1,0 +1,8 @@
+flowchart LR
+  I["Input -> patch partition"] --> S1["Swin stage 1<br/>(W-MSA / SW-MSA)"] --> S2["Swin stage 2"] --> S3["Swin stage 3"] --> S4["Swin stage 4"]
+  S4 --> B["Bottleneck"]
+  B --> D["CNN decoder<br/>(ConvTranspose), concat skips"]
+  D --> H["1x1 conv -> 4 classes"]
+  S3 -. skip .-> D
+  S2 -. skip .-> D
+  S1 -. skip .-> D

@@ -1,0 +1,415 @@
+% =====================================================================
+% MICCAI / Springer LNCS -- versión en español de partial.tex
+% Requiere: llncs.cls + babel (español). Figuras en ./figures/.
+% Marcadores a completar antes del envío: [[ ... ]]
+% =====================================================================
+\documentclass[runningheads]{llncs}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage[hidelinks]{hyperref}
+
+% Encabezados en español para el entorno abstract / palabras clave de llncs
+\renewcommand{\abstractname}{Resumen}
+\renewcommand{\keywordname}{\bfseries Palabras clave:}
+
+\newcommand{\todo}[1]{\textcolor{red}{[[#1]]}}
+
+\title{Redes Convolucionales Cuánticas frente a Clásicas para la Segmentación\\
+de Subregiones del Tronco Encefálico en la Ataxia Espinocerebelosa Tipo~2:\\
+Un Estudio Comparativo con Parámetros Equiparados --- Resultados Parciales}
+\titlerunning{Redes Cuánticas vs Clásicas: Segmentación del Tronco Encefálico (SCA2) -- Resultados Parciales}
+
+\author{}
+\authorrunning{Resultados Parciales}
+\institute{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+La segmentación precisa de las subregiones del tronco encefálico (bulbo
+raquídeo, protuberancia, mesencéfalo) sustenta los biomarcadores de imagen de
+la neurodegeneración, en particular la atrofia progresiva de la protuberancia y
+el bulbo característica de la ataxia espinocerebelosa tipo~2 (SCA2), un
+trastorno cuya mayor prevalencia mundial se registra en Holguín, Cuba.
+Presentamos una comparación controlada de nueve arquitecturas de segmentación
+sobre una cohorte relevante para la SCA2 adquirida en el Centro de
+Neurociencias de Cuba, enfrentando seis U-Nets clásicas (convolucionales y de
+tipo transformer) a tres redes híbridas cuántico--clásicas, cada una en los
+regímenes 2D (cortes axiales) y 3D (volumétrico) con un presupuesto equiparado
+de ${\sim}17$M parámetros. Todos los modelos alcanzan una precisión elevada
+(Dice medio $0{,}92$--$0{,}94$). Destacan dos hallazgos. Primero, una ablación
+de capacidad ---ampliar el codificador clásico de las redes cuánticas de
+$6{,}1$M a $16{,}9$M parámetros sin mejora alguna--- sitúa su techo de
+rendimiento en el cuello de botella cuántico, de modo que alcanzan la precisión
+de los modelos clásicos con ${\sim}\tfrac{1}{3}$ de los parámetros, a un costo
+computacional (simulado) un orden de magnitud mayor. Segundo, la metodología de
+evaluación domina las conclusiones en 2D: bajo la métrica convencional
+(solo cortes con estructura) todos los modelos 2D son estadísticamente
+indistinguibles (Friedman $p{=}0{,}637$), pero bajo una evaluación honesta sobre
+el volumen completo se separan con claridad (Friedman $p{<}0{,}0001$), siendo
+los modelos híbridos cuánticos los \emph{más robustos} frente a falsos
+positivos en cortes vacíos (agrupado $p{=}0{,}031$) y degradándose más algunos
+modelos clásicos elaborados. En 3D, ya evaluado sobre volúmenes completos, los
+modelos clásicos conservan una pequeña ventaja ($p{=}0{,}008$). Todos los
+procedimientos siguieron la Declaración de Helsinki.
+\keywords{Segmentación del tronco encefálico \and Ataxia espinocerebelosa \and
+Aprendizaje automático cuántico \and U-Net \and Metodología de evaluación.}
+\end{abstract}
+
+% =====================================================================
+\section{Introducción}
+La ataxia espinocerebelosa tipo~2 (SCA2) es un trastorno neurodegenerativo
+autosómico dominante causado por una expansión de repeticiones CAG en
+\emph{ATXN2}~\cite{pulst}. Su neuropatología se centra en el sistema
+olivopontocerebeloso, y la atrofia cuantitativa de la protuberancia y el bulbo
+raquídeo constituye un biomarcador de imagen establecido y sensible a la
+progresión~\cite{velazquez}. La SCA2 reviste especial importancia en Cuba, donde
+la provincia de Holguín presenta la mayor prevalencia del mundo y donde el
+Centro de Neurociencias de Cuba mantiene un programa de investigación de larga
+trayectoria~\cite{velazquez}. La delineación automática y fiable de las
+subregiones del tronco encefálico es un requisito previo para derivar tales
+biomarcadores a gran escala; el trazado manual es lento y dependiente del
+observador.
+
+Las U-Nets convolucionales profundas~\cite{unet,unet3d} son la herramienta
+estándar, pero su huella en parámetros motiva el interés por sesgos inductivos
+alternativos. Las redes híbridas cuántico--clásicas se han propuesto como
+aproximadores de funciones eficientes en parámetros~\cite{qcnn}, aunque su
+utilidad para la segmentación médica volumétrica apenas se ha probado y rara vez
+se compara \emph{a igualdad de capacidad}. Planteamos una pregunta
+deliberadamente controlada: \textbf{cuando las redes de segmentación clásicas y
+cuánticas reciben el mismo presupuesto de parámetros sobre los mismos datos
+clínicos, ¿difieren --- y depende la respuesta de cómo las evaluamos?}
+
+\noindent\textbf{Contribuciones.}
+(i)~Una comparación reproducible de nueve arquitecturas (seis clásicas, tres
+híbridas cuánticas) en 2D y 3D sobre una cohorte de tronco encefálico relevante
+para la SCA2.
+(ii)~Una ablación de capacidad que sitúa el techo de los modelos cuánticos en el
+cuello de botella cuántico, cuantificando una ventaja real de eficiencia en
+parámetros (no de precisión) y su costo computacional.
+(iii)~Evidencia de que las conclusiones en 2D dependen del protocolo de
+evaluación: la evaluación honesta sobre el volumen completo revierte un aparente
+resultado de ``ausencia de diferencias'' y revela a los modelos híbridos
+cuánticos como los más robustos.
+
+% =====================================================================
+\section{Materiales y Métodos}
+
+\subsection{Cohorte, ética y preprocesamiento}
+Se adquirieron imágenes de RM cerebral potenciadas en T1 de \todo{$N$} sujetos
+(\todo{edad, sexo, composición clínica}) en el Centro de Neurociencias de Cuba.
+\textbf{Todos los procedimientos se ajustaron a la Declaración de
+Helsinki}~\cite{helsinki}; el estudio fue aprobado por el
+\todo{comité de ética, n.\ de aprobación} y todos los participantes otorgaron
+su consentimiento informado por escrito. Los volúmenes se procesaron con
+corrección de campo de sesgo N4~\cite{n4}, registro afín al espacio MNI y
+recorte a un campo de visión de $80\times80\times96$ centrado en el tronco
+encefálico; las intensidades se normalizaron por volumen mediante puntuación
+$z$ (sin estadísticas entre sujetos, por lo que no hay fuga
+entrenamiento/prueba). Las etiquetas expertas definen cuatro clases: fondo,
+bulbo raquídeo, protuberancia y mesencéfalo. Los sujetos se dividieron $27/6/6$
+(entrenamiento/validación/prueba) a nivel de \emph{sujeto} con una semilla fija;
+los seis sujetos de prueba son idénticos para todos los modelos.
+
+\subsection{Arquitecturas}
+Evaluamos seis codificadores--decodificadores clásicos ---una \textbf{U-Net} de
+doble convolución~\cite{unet,unet3d}, \textbf{CerebNet}~\cite{cerebnet} (bloques
+densos competitivos), \textbf{MipaimUNet} (inception multi-rama~\cite{inception}
+con conexiones de salto refinadas por atención),
+\textbf{SwinUNETR}~\cite{swinunetr,swin} (autoatención por ventanas),
+\textbf{ACAPULCO}~\cite{acapulco} (residual con preactivación) y \textbf{MARIN}
+(bloques multiescala de preactivación con dilatación dual y atención
+CBAM~\cite{cbam})--- y tres modelos híbridos cuántico--clásicos.
+
+\paragraph{Modelos híbridos cuánticos.} \textbf{PennyLane-QCNN}~\cite{pennylane}
+y \textbf{Qiskit-QCNN}~\cite{qiskit} son U-Nets clásicas cuyo cuello de botella
+se modula mediante un circuito cuántico variacional~\cite{qcnn}: el mapa de
+características más profundo $x$ se reduce por promediado global (GAP) a un vector
+de canales (se descarta la estructura espacial), se codifica en ángulos sobre
+$n_q{=}8$ ($4$) qubits, se transforma con capas de entrelazamiento, se lee como
+valores esperados de Pauli-$Z$, se reproyecta y se \emph{suma} a $x$
+($x \leftarrow x + q_{\text{feat}}$). La vía cuántica es, por tanto, una
+\emph{rama lateral} global y espacialmente uniforme de recalibración de canales
+(Fig.~\ref{fig:arch}) --- no un cuello de botella por el que fluya la
+representación; las características convolucionales pasan inalteradas. El
+\textbf{Hybrid-QCNN} es idéntico a PennyLane-QCNN salvo en la profundidad del
+ansatz. En consecuencia, los tres modelos son híbridos; ninguno es puramente
+cuántico. Los circuitos se simulan de forma clásica, no se ejecutan en hardware
+cuántico.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  box/.style={draw,rounded corners,minimum height=7mm,minimum width=9mm,align=center},
+  qbox/.style={box,fill=red!10,draw=red!60},
+  cbox/.style={box,fill=blue!6},
+  >/.tip={Stealth},every edge/.style={draw,-Stealth}
+]
+\node[cbox] (in) {Entrada\\$1{\times}80{\times}80$};
+\node[cbox,right=6mm of in] (enc) {Codif.\\conv.\\(3 etapas)};
+\node[cbox,right=6mm of enc] (bn) {Cuello de\\botella $x$};
+\node[circle,draw,inner sep=1pt,right=8mm of bn] (add) {$+$};
+\node[cbox,right=8mm of add] (dec) {Decod.\\conv.};
+\node[cbox,right=6mm of dec] (head) {conv\\$1{\times}1$};
+\node[qbox,above=9mm of add] (qc) {Circuito\\cuántico};
+\node[qbox,left=4mm of qc] (gap) {GAP\\$\to n_q$};
+\node[qbox,right=4mm of qc] (po) {Lineal\\$\to C$};
+\draw (in) edge (enc);
+\draw (enc) edge (bn);
+\draw (bn) edge (add);
+\draw (add) edge (dec);
+\draw (dec) edge (head);
+\draw[-Stealth] (bn.north) |- (gap.west);
+\draw (gap) edge (qc);
+\draw (qc) edge (po);
+\draw[-Stealth] (po.east) -| (add.north);
+\draw[dashed,-Stealth] (enc.south) to[out=-35,in=-145] (dec.south);
+\node[font=\tiny,below=4mm of add,red!70] {conexiones de salto (discontinuas)};
+\begin{scope}[on background layer]
+\node[draw=red!40,rounded corners,fill=red!4,fit=(gap)(qc)(po),inner sep=2mm,
+  label={[red!70,font=\tiny]above:rama lateral cuántica aditiva}] {};
+\end{scope}
+\end{tikzpicture}
+\caption{Arquitectura híbrida cuántico--clásica. El circuito cuántico opera
+sobre un vector de canales obtenido por promediado global (GAP) y su salida se
+difunde y se \emph{suma} al cuello de botella convolucional $x$; es una rama
+lateral de recalibración de canales, no un verdadero cuello de botella.}
+\label{fig:arch}
+\end{figure}
+
+\paragraph{Equiparación de parámetros.} Los modelos clásicos autoseleccionan
+anchos de canal específicos por dimensión para mantener ${\sim}17$M parámetros
+en 2D y 3D. Los modelos cuánticos/híbridos usan un codificador fijo de $3$
+etapas $[80,160,320]$ que da ${\sim}6{,}1$M en 2D pero ${\sim}17{,}6$M en 3D
+(los núcleos 3D cuestan ${\sim}3\times$). Los modelos cuánticos 2D nativos, por
+tanto, \emph{no} están equiparados; añadimos una segunda ejecución 2D con un
+codificador de $4$ etapas $[80,160,320,480]\,({=}16{,}9$M, las variantes
+``17M'').
+
+\subsection{Entrenamiento, métricas y hardware}
+Los modelos se entrenaron con Adam~\cite{adam} (tasa~$10^{-3}$, programación
+coseno, calentamiento de $5$ épocas), una pérdida combinada de entropía cruzada
+y Dice suave~\cite{vnet} con ponderación de clases por frecuencia inversa,
+precisión mixta, recorte de gradiente y parada temprana (paciencia~$15$,
+mínimo $250$ épocas) sobre una única NVIDIA RTX~3090. Reportamos el Dice por
+clase de primer plano y el Dice medio de primer plano. La unidad estadística
+primaria es el Dice medio por sujeto sobre los seis sujetos de prueba; dado el
+$n$ reducido reportamos intervalos de confianza del $95\%$ por remuestreo
+(bootstrap) de las diferencias pareadas y la $d$ de Cohen pareada como evidencia
+primaria, con la prueba ómnibus de Friedman y pruebas de Wilcoxon corregidas por
+Holm~\cite{nonparam} como exploratorias.
+
+\paragraph{Protocolo de evaluación.} Para el entrenamiento 2D se descartan los
+cortes axiales con $<20$ vóxeles de primer plano. Aplicar este filtro al
+conjunto de prueba puntúa \emph{solo} los cortes con tronco encefálico, sin
+penalizar nunca los falsos positivos en cortes vacíos, dando un Dice optimista.
+Por ello reportamos además una \textbf{evaluación honesta sobre el volumen
+completo} en 2D sobre los $96$ cortes axiales de cada sujeto. Los modelos 3D ya
+evalúan volúmenes completos; en consecuencia, las cifras 2D y 3D no son
+directamente comparables. Los experimentos se ejecutaron en una estación con
+$2{\times}$RTX~3090 (24\,GB) (una por ejecución), Python~3.12, PyTorch~2.6,
+PennyLane~0.44 y Qiskit~2.4.
+
+% =====================================================================
+\section{Resultados}
+Todos los valores de Dice son la media por sujeto~$\pm$~d.e.\ sobre los seis
+sujetos de prueba.
+
+\subsection{Precisión a igualdad de capacidad}
+Todas las arquitecturas alcanzaron una precisión elevada
+(Tabla~\ref{tab:main}). Sobre cortes 2D con estructura, los nueve modelos a
+igualdad de capacidad fueron estadísticamente indistinguibles
+(Friedman $\chi^2{=}6{,}09$, $p{=}0{,}637$); el mejor fue un modelo cuántico
+(Qiskit-QCNN). En 3D los modelos difirieron ($\chi^2{=}20{,}58$,
+$p{=}0{,}008$) y el mejor fue clásico (MipaimUNet).
+
+\begin{table}[t]
+\centering
+\caption{Dice medio por sujeto $\pm$ d.e.\ ($n{=}6$). Q=cuántico, H=híbrido,
+C=clásico. El 2D se muestra sobre cortes con estructura al presupuesto
+equiparado de $16{,}9$M.}
+\label{tab:main}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcc@{\hskip 1em}lcc}
+\toprule
+\multicolumn{3}{c}{\textbf{2D (cortes axiales)}} &
+\multicolumn{3}{c}{\textbf{3D (volúmenes)}}\\
+\cmidrule(r){1-3}\cmidrule(l){4-6}
+Modelo & Par. & Dice & Modelo & Par. & Dice\\
+\midrule
+Qiskit-QCNN (Q)    & 16,9M & $.932{\pm}.007$ & MipaimUNet (C)     & 17,8M & $.940{\pm}.013$\\
+MARIN (C)          & 17,4M & $.932{\pm}.015$ & ACAPULCO (C)       & 17,1M & $.937{\pm}.017$\\
+Hybrid-QCNN (H)    & 16,9M & $.932{\pm}.011$ & PennyLane-QCNN (Q) & 17,6M & $.935{\pm}.016$\\
+MipaimUNet (C)     & 17,3M & $.931{\pm}.015$ & MARIN (C)          & 17,1M & $.934{\pm}.019$\\
+PennyLane-QCNN (Q) & 16,9M & $.930{\pm}.013$ & SwinUNETR (C)      & 17,1M & $.932{\pm}.020$\\
+SwinUNETR (C)      & 16,8M & $.929{\pm}.014$ & Hybrid-QCNN (H)    & 17,6M & $.931{\pm}.022$\\
+ClassicalCNN (C)   & 17,0M & $.929{\pm}.013$ & CerebNet (C)       & 18,0M & $.930{\pm}.018$\\
+ACAPULCO (C)       & 17,4M & $.928{\pm}.017$ & Qiskit-QCNN (Q)    & 17,6M & $.925{\pm}.032$\\
+CerebNet (C)       & 16,7M & $.927{\pm}.016$ & ClassicalCNN (C)   & 17,0M & $.920{\pm}.037$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{El cuello de botella cuántico es el techo}
+Ampliar el codificador clásico de los modelos cuánticos/híbridos 2D de
+$6{,}1$M a $16{,}9$M parámetros no produjo \emph{ninguna} mejora
+(PennyLane $\Delta{=}{-}0{,}0023$, IC~95\% $[-0{,}0046,-0{,}0005]$;
+Qiskit $\Delta{=}{-}0{,}0007$; Hybrid $\Delta{=}{+}0{,}0019$; ninguno sobrevive
+a la corrección de Holm). El rendimiento está limitado por el cuello de botella
+de $8$ qubits, no por la red troncal --- de modo que los modelos cuánticos
+alcanzan el Dice de los clásicos con ${\sim}\tfrac13$ de los parámetros. El
+costo es computacional: las ejecuciones cuánticas 2D tardaron $8{,}9$--$13{,}6$\,h
+frente a $0{,}3$--$1{,}0$\,h de los modelos clásicos; en 3D la brecha se reduce
+(cuántico $28$--$35$\,min) al dominar el costo la red clásica de mayor tamaño
+(Fig.~\ref{fig:cost}).
+
+\subsection{La evaluación honesta sobre el volumen completo revierte el
+resultado en 2D}
+Repuntuar los mismos modelos 2D sobre los $96$ cortes de cada sujeto cambia el
+panorama sustancialmente (Tabla~\ref{tab:c2}, Fig.~\ref{fig:c2}). La prueba de
+Friedman salta de $p{=}0{,}637$ a $\chi^2{=}39{,}5$, $p{<}0{,}0001$, y la
+dispersión del Dice medio se amplía de ${\approx}0{,}006$ a $0{,}059$. El filtro
+había enmascarado grandes diferencias en el comportamiento de falsos positivos
+en cortes vacíos: MARIN ---co-líder en cortes filtrados--- cae al \emph{último}
+puesto ($-0{,}087$), mientras que los modelos híbridos cuánticos son los más
+robustos. Agrupado, cuántico/híbrido vs clásico: $0{,}894$ vs $0{,}878$,
+$\Delta{=}{+}0{,}016$, Wilcoxon $p{=}0{,}031$. Los modelos cuánticos estrechos de
+$6{,}1$M muestran las menores caídas de todos.
+
+\begin{table}[t]
+\centering
+\caption{Dice 2D: evaluación convencional (solo cortes con estructura) frente a
+volumen completo honesto (media por sujeto, $n{=}6$). $\Delta$ = volumen
+completo $-$ filtrado.}
+\label{tab:c2}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{llccc}
+\toprule
+Modelo & Tipo & Filtrado & Vol.\ completo & $\Delta$\\
+\midrule
+Qiskit-QCNN (17M)    & Q & 0,932 & \textbf{0,905} & $-0,028$\\
+CerebNet             & C & 0,927 & 0,899 & $-0,028$\\
+ClassicalCNN         & C & 0,929 & 0,898 & $-0,031$\\
+Hybrid-QCNN (17M)    & H & 0,932 & 0,898 & $-0,034$\\
+SwinUNETR            & C & 0,929 & 0,883 & $-0,046$\\
+PennyLane-QCNN (17M) & Q & 0,930 & 0,880 & $-0,050$\\
+MipaimUNet           & C & 0,931 & 0,875 & $-0,056$\\
+ACAPULCO             & C & 0,928 & 0,866 & $-0,062$\\
+MARIN                & C & 0,932 & \textbf{0,845} & $-0,087$\\
+\midrule
+PennyLane-QCNN (6M)  & Q & 0,932 & 0,914 & $-0,018$\\
+Qiskit-QCNN (6M)     & Q & 0,933 & 0,912 & $-0,022$\\
+Hybrid-QCNN (6M)     & H & 0,930 & 0,899 & $-0,031$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{figures/fig_fullvol_vs_fg_2d_es.png}
+\caption{Dice 2D por sujeto bajo evaluación filtrada (gris) frente a volumen
+completo honesto (color: rojo = cuántico/híbrido, azul = clásico), ordenado por
+la puntuación de volumen completo. La métrica filtrada comprime todos los
+modelos cerca de $0{,}93$; la evaluación honesta los separa, siendo los
+cuánticos/híbridos los más robustos.}
+\label{fig:c2}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{figures/fig_cost_2d_es.png}
+\caption{Precisión 2D frente al tiempo de entrenamiento (escala log). Los
+modelos cuánticos ocupan la región de alto costo con precisión comparable, lo
+que refleja la simulación clásica de los circuitos.}
+\label{fig:cost}
+\end{figure}
+
+% =====================================================================
+\section{Discusión}
+A igualdad de capacidad, las U-Nets híbridas cuántico--clásicas igualan a las
+redes clásicas en la segmentación de subregiones del tronco encefálico en 2D y
+quedan ligeramente por detrás en 3D. La ablación muestra que su ventaja es de
+\emph{eficiencia en parámetros, no de precisión}: un cuello de botella de $8$
+qubits sustituye a varios millones de parámetros convolucionales sin pérdida de
+Dice, pero también limita la precisión alcanzable; hoy esto se compensa con el
+costo de la simulación de vector de estado.
+
+El hallazgo más relevante es metodológico. El protocolo 2D convencional
+(solo cortes con estructura) hacía que todos los modelos parecieran idénticos,
+mientras que la puntuación honesta sobre el volumen completo ---que penaliza los
+falsos positivos en cortes sin tronco encefálico--- los separó en un orden de
+magnitud y reordenó el ranking. Los modelos híbridos cuánticos, y en especial
+las variantes estrechas de $6{,}1$M, resultaron los más robustos, posiblemente
+porque la rama cuántica global aditiva actúa como una compuerta conservadora de
+canales que suprime activaciones espurias ante entradas vacías. Esto sugiere que
+los \textbf{benchmarks de segmentación del tronco encefálico deben reportarse
+sobre volúmenes completos}, no sobre cortes filtrados, para ser clínicamente
+significativos. Clínicamente, todos los modelos produjeron segmentaciones lo
+bastante precisas (Dice de bulbo/protuberancia ${\sim}0{,}94$) para sustentar
+las mediciones de atrofia de la protuberancia y el bulbo relevantes para la
+SCA2; para su despliegue, una U-Net 3D clásica y rápida sigue siendo la opción
+pragmática.
+
+\noindent\textbf{Limitaciones.} El conjunto de prueba tiene seis sujetos, lo que
+limita la potencia estadística; las diferencias se reportan como tamaños del
+efecto con intervalos por remuestreo y se interpretan como exploratorias. Cada
+configuración usó una única semilla; los datos son de un solo centro; los
+modelos cuánticos se simularon de forma clásica. Una auditoría del código también
+identificó un término de Dice ponderado por clases mal escalado (ya corregido);
+los modelos reportados se entrenaron con la pérdida original, por lo que la
+comparación \emph{relativa} es internamente consistente pero los valores
+absolutos pueden variar tras reentrenar. Cohortes multicéntricas, entrenamiento
+con múltiples semillas, reentrenamiento con volumen completo y validación
+prospectiva de biomarcadores son los siguientes pasos naturales.
+
+% =====================================================================
+\section{Conclusión}
+Sobre una cohorte de tronco encefálico relevante para la SCA2, las redes de
+segmentación cuánticas y clásicas con parámetros equiparados tienen una
+precisión comparable, ofreciendo los modelos cuánticos eficiencia en parámetros
+a un costo computacional sustancial. De forma crucial, las conclusiones en 2D
+dependen del protocolo de evaluación: la puntuación honesta sobre el volumen
+completo revela a los modelos híbridos cuánticos como los más robustos frente a
+falsos positivos en cortes vacíos. Los hallazgos respaldan la investigación
+continua y cuidadosamente controlada de la segmentación híbrida
+cuántico--clásica y de estándares de evaluación sobre volúmenes completos.
+
+\subsubsection*{Agradecimientos.} \todo{Financiación y agradecimientos de
+recolección de datos.}
+
+% =====================================================================
+\begin{thebibliography}{99}
+\bibitem{unet} Ronneberger, O., Fischer, P., Brox, T.: U-Net: Convolutional networks for biomedical image segmentation. In: MICCAI (2015)
+\bibitem{unet3d} \c{C}i\c{c}ek, \"O., et al.: 3D U-Net: learning dense volumetric segmentation from sparse annotation. In: MICCAI (2016)
+\bibitem{vnet} Milletari, F., Navab, N., Ahmadi, S.A.: V-Net: fully convolutional neural networks for volumetric medical image segmentation. In: 3DV (2016)
+\bibitem{cerebnet} Faber, J., et al.: CerebNet: a fast and reliable deep-learning pipeline for detailed cerebellum sub-segmentation. NeuroImage (2022)
+\bibitem{acapulco} Han, S., Carass, A., et al.: Automatic cerebellum anatomical parcellation using U-Net with locally constrained optimization (ACAPULCO). NeuroImage (2020)
+\bibitem{swinunetr} Hatamizadeh, A., et al.: Swin UNETR: Swin transformers for semantic segmentation of brain tumors in MRI images. In: MICCAI BrainLes Workshop (2022)
+\bibitem{swin} Liu, Z., et al.: Swin Transformer: hierarchical vision transformer using shifted windows. In: ICCV (2021)
+\bibitem{inception} Szegedy, C., et al.: Going deeper with convolutions. In: CVPR (2015)
+\bibitem{cbam} Woo, S., Park, J., Lee, J.Y., Kweon, I.S.: CBAM: convolutional block attention module. In: ECCV (2018)
+\bibitem{qcnn} Cong, I., Choi, S., Lukin, M.D.: Quantum convolutional neural networks. Nature Physics 15, 1273--1278 (2019)
+\bibitem{pennylane} Bergholm, V., et al.: PennyLane: automatic differentiation of hybrid quantum-classical computations. arXiv:1811.04968 (2018)
+\bibitem{qiskit} Qiskit contributors: Qiskit: an open-source framework for quantum computing (2023)
+\bibitem{n4} Tustison, N.J., et al.: N4ITK: improved N3 bias correction. IEEE TMI 29(6), 1310--1320 (2010)
+\bibitem{adam} Kingma, D.P., Ba, J.: Adam: a method for stochastic optimization. In: ICLR (2015)
+\bibitem{pulst} Pulst, S.M., et al.: Moderate expansion of a normally biallelic trinucleotide repeat in spinocerebellar ataxia type 2. Nature Genetics 14, 269--276 (1996)
+\bibitem{velazquez} Velazquez-Perez, L., Rodriguez-Labrada, R., Fernandez-Ruiz, J.: Spinocerebellar ataxia type 2: clinicogenetic aspects, mechanistic insights, and management. \todo{verificar revista/año}
+\bibitem{helsinki} Asociación Médica Mundial: Declaración de Helsinki: principios éticos para las investigaciones médicas en seres humanos. JAMA 310(20), 2191--2194 (2013)
+\bibitem{nonparam} Friedman, M.: The use of ranks to avoid the assumption of normality implicit in the analysis of variance. JASA 32, 675--701 (1937); Wilcoxon, F.: Individual comparisons by ranking methods. Biometrics Bulletin 1, 80--83 (1945)
+\end{thebibliography}
+
+\end{document}

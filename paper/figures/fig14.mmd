@@ -1,0 +1,6 @@
+flowchart LR
+  S["Per-subject<br/>segmentations"] --> R["Register to common<br/>MNI template"]
+  R --> V["Voxel-wise statistics<br/>(z-score / Jacobian)"]
+  V --> A["Population atrophy map<br/>+ probabilistic atlas"]
+  A --> B["Correlate with SARA score<br/>and CAG repeat length"]
+  B --> K["Imaging biomarker"]

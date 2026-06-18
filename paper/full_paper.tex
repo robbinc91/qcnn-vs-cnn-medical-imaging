@@ -1,0 +1,373 @@
+% =====================================================================
+% Full paper -- MICCAI / Springer LNCS (English). Requires llncs.cls.
+% Diagrams: figures/figNN.pdf (rendered from Mermaid). Placeholders: [[ ... ]]
+% =====================================================================
+\documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\todo}[1]{\textcolor{red}{[[#1]]}}
+% diagram figure with capped size so nothing overflows the page
+\newcommand{\dfig}[3]{\begin{figure}[t]\centering
+\includegraphics[width=\textwidth,height=0.34\textheight,keepaspectratio]{#1}
+\caption{#2}\label{#3}\end{figure}}
+
+\title{Quantum versus Classical Convolutional Networks for Brainstem\\
+Subregion Segmentation in Spinocerebellar Ataxia Type~2:\\
+A Comprehensive Parameter-Matched Benchmark}
+\titlerunning{Quantum vs Classical CNNs for Brainstem Segmentation in SCA2}
+\author{\todo{Author One}\inst{1} \and \todo{Author Two}\inst{1} \and \todo{Senior Author}\inst{1}}
+\authorrunning{\todo{Author One} et al.}
+\institute{Cuban Neuroscience Center (CNEURO), Havana, Cuba\\
+\email{\todo{corresponding@email}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Accurate segmentation of brainstem subregions (medulla, pons, mesencephalon)
+underpins imaging biomarkers for neurodegeneration, notably the progressive
+pontine and medullary atrophy of spinocerebellar ataxia type~2 (SCA2), a
+disorder with the world's highest prevalence in Holgu\'in, Cuba. We present a
+comprehensive, controlled benchmark of nine segmentation architectures on an
+SCA2-relevant cohort acquired at the Cuban Neuroscience Center, comparing six
+classical CNN/transformer U-Nets against three hybrid quantum--classical
+networks, each in 2D and 3D at a matched ${\sim}17$M-parameter budget. All
+models reach high accuracy (mean Dice $0.92$--$0.94$). A capacity ablation
+localises the quantum models' ceiling to the quantum bottleneck (they match
+classical accuracy with ${\sim}\tfrac13$ of the parameters at an
+order-of-magnitude higher simulated compute cost). Evaluation methodology
+dominates the 2D conclusions: under the conventional foreground-only metric all
+2D models are indistinguishable (Friedman $p{=}0.637$), but under honest
+full-volume evaluation they separate sharply ($p{<}0.0001$), with the hybrid
+quantum models the most robust to false positives on empty slices (pooled
+$p{=}0.031$); in 3D, classical models retain a small edge ($p{=}0.008$). We
+provide per-architecture diagrams and outline future directions including real
+quantum hardware, multi-centre validation, and the use of population atrophy
+maps, self-organizing maps and uncertainty maps. All procedures followed the
+Declaration of Helsinki.
+\keywords{Brainstem segmentation \and Spinocerebellar ataxia \and Quantum
+machine learning \and U-Net \and Evaluation methodology.}
+\end{abstract}
+
+\section{Introduction}
+Spinocerebellar ataxia type~2 (SCA2) is an autosomal-dominant neurodegenerative
+disorder caused by a CAG-repeat expansion in \emph{ATXN2}~\cite{pulst}. Its
+neuropathology centres on the olivopontocerebellar system; quantitative atrophy
+of the pons and medulla is an established, progression-sensitive imaging
+biomarker~\cite{velazquez}. SCA2 is of singular importance in Cuba, where the
+Holgu\'in province reports the highest prevalence worldwide and where the Cuban
+Neuroscience Center (CNEURO) maintains a decades-long programme~\cite{velazquez}.
+Deriving such biomarkers at scale requires reliable automated delineation of
+brainstem subregions; manual tracing is slow and rater-dependent.
+
+Convolutional U-Nets~\cite{unet,unet3d} and many refinements
+\cite{cerebnet,acapulco,swinunetr,inception,cbam} dominate medical segmentation.
+Hybrid quantum--classical networks have been proposed as parameter-efficient
+approximators~\cite{qcnn}, but their value for volumetric medical segmentation
+is largely untested and rarely compared at matched capacity under a clinically
+honest protocol. We ask: (i)~at equal capacity, do classical and quantum models
+differ? (ii)~where is the quantum models' ceiling? (iii)~do conclusions depend
+on the evaluation protocol? Our contributions are a reproducible nine-model
+benchmark in 2D and 3D with per-architecture diagrams, a capacity ablation, the
+finding that honest full-volume evaluation overturns the apparent 2D
+equivalence, and a roadmap including the use of maps in future studies.
+
+\section{Related Work}
+The U-Net~\cite{unet} and its 3D form~\cite{unet3d} established the
+encoder--decoder-with-skips paradigm; posterior-fossa pipelines such as
+ACAPULCO~\cite{acapulco} and CerebNet~\cite{cerebnet} tailored it to the
+cerebellum/brainstem. Transformer encoders~\cite{swin,swinunetr} added long-range
+attention; inception~\cite{inception} and attention gating~\cite{cbam} improved
+multi-scale and skip modelling. Quantum CNNs~\cite{qcnn} and differentiable
+circuits via PennyLane~\cite{pennylane} and Qiskit~\cite{qiskit} have mostly been
+tested on low-dimensional tasks; fair, capacity-matched comparisons on clinical
+volumetric data are scarce. Finally, slice-level 2D pipelines that filter to
+structure-bearing slices can inflate apparent accuracy, an issue we quantify.
+
+\section{Data: Brain Imaging and MRI}
+\subsection{Cohort and ethics}
+T1-weighted brain MRI from \todo{$N$} subjects (\todo{age, sex, clinical
+composition}) was acquired at CNEURO. \textbf{All procedures conformed to the
+Declaration of Helsinki}~\cite{helsinki}; the study was approved by
+\todo{ethics committee, approval no.}\ with written informed consent.
+
+\subsection{Acquisition and preprocessing}
+Volumes underwent N4 bias-field correction~\cite{n4}, affine registration to MNI
+space, cropping to an $80\times80\times96$ brainstem field of view, and
+per-volume $z$-score normalisation (no cross-subject statistics; Fig.~\ref{fig:prep}).
+Four classes are labelled: background, medulla, pons, mesencephalon.
+\dfig{figures/fig01.pdf}{MRI preprocessing pipeline.}{fig:prep}
+
+\subsection{Data partitions}
+The 39 subjects are split at the subject level (seed~42): 27 train / 6
+validation / 6 test, identical test set across models (Fig.~\ref{fig:split}).
+\dfig{figures/fig02.pdf}{Subject-level data partition (no slice-level leakage).}{fig:split}
+
+\section{Methods: Architectures}
+All models are dimension-agnostic (a flag selects 2D/3D operators). They share an
+encoder--decoder-with-skips template (Fig.~\ref{fig:unet}).
+\dfig{figures/fig03.pdf}{Shared U-Net template.}{fig:unet}
+
+\subsection{ClassicalCNN}
+A double-conv U-Net (\texttt{Conv-BatchNorm-ReLU}$\times2$ per stage), channels
+$[64,128,256,352]$ (2D)/$[38,76,156,204]$ (3D), four poolings, concatenation
+skips, double-conv bottleneck; ${\sim}16.95$M (Fig.~\ref{fig:ccnn}).
+\dfig{figures/fig04.pdf}{ClassicalCNN.}{fig:ccnn}
+
+\subsection{CerebNet}
+Competitive-dense blocks (\texttt{Conv-BatchNorm-PReLU} with competitive maxout
+shortcut), index-based MaxPool/MaxUnpool, uniform $160$ channels; ${\sim}16.65$M
+(2D)/$17.98$M (3D) (Fig.~\ref{fig:cereb}).
+\dfig{figures/fig05.pdf}{CerebNet.}{fig:cereb}
+
+\subsection{MipaimUNet}
+Five encoder levels of inception multi-branch blocks~\cite{inception} with
+InstanceNorm, CBAM-refined skips~\cite{cbam}, explicit inception bottleneck;
+${\sim}17.27$M (2D)/$17.80$M (3D) (Fig.~\ref{fig:mip}).
+\dfig{figures/fig06.pdf}{MipaimUNet.}{fig:mip}
+
+\subsection{SwinUNETR}
+A Swin transformer encoder~\cite{swin,swinunetr} (shifted-window attention,
+window~7), convolutional decoder with concatenation skips; ${\sim}16.79$M
+(2D)/$17.06$M (3D) (Fig.~\ref{fig:swin}).
+\dfig{figures/fig07.pdf}{SwinUNETR.}{fig:swin}
+
+\subsection{ACAPULCO}
+Pre-activation residual U-Net (\texttt{InstanceNorm-ReLU-Conv} with residual
+add), two blocks per stage, channels $[44,88,176,240]$ (2D)/$[26,52,104,140]$
+(3D); ${\sim}17.38$M (2D)/$17.08$M (3D) (Fig.~\ref{fig:aca}).
+\dfig{figures/fig08.pdf}{ACAPULCO.}{fig:aca}
+
+\subsection{MARIN}
+A fusion design: pre-activation ordering, CBAM-gated skips, competitive-maxout
+bottleneck, and dual dilated branches (dilation~1~$\|$~2) per block with PReLU
+and InstanceNorm; ${\sim}17.42$M (2D)/$17.10$M (3D) (Fig.~\ref{fig:marin}).
+\dfig{figures/fig09.pdf}{MARIN.}{fig:marin}
+
+\subsection{Hybrid quantum--classical networks}
+All three ``quantum'' models share one design. A classical conv U-Net (3-stage
+encoder $[80,160,320]$) has its bottleneck $x$ global-average-pooled to a channel
+vector (spatial structure discarded), passed through a variational quantum
+circuit (Fig.~\ref{fig:circ}), projected back, broadcast and \emph{added} to $x$
+($x \leftarrow x + q_{\text{feat}}$). The quantum path is a global,
+spatially-uniform channel-recalibration side-branch (Fig.~\ref{fig:hyb}), not a
+bottleneck the representation flows through; the convolutional features pass
+through unchanged. PennyLane-QCNN/Hybrid-QCNN use a PennyLane circuit (angle
+embedding + StronglyEntanglingLayers, 8 qubits); Qiskit-QCNN uses a Qiskit
+EstimatorQNN (ZZFeatureMap + RealAmplitudes, 4 qubits). \textbf{None is a pure
+quantum network; all are hybrid.} Circuits are classically simulated.
+\dfig{figures/fig10.pdf}{Hybrid quantum--classical architecture (additive
+quantum side-branch).}{fig:hyb}
+\dfig{figures/fig11.pdf}{Variational quantum bottleneck circuit.}{fig:circ}
+
+\subsection{Parameter matching}
+Classical models hold ${\sim}17$M parameters in 2D and 3D. The quantum models'
+fixed 3-stage encoder gives ${\sim}6.1$M in 2D but ${\sim}17.6$M in 3D (3D
+kernels cost ${\sim}3\times$), so the native 2D quantum models are not
+parameter-matched. We add a 2D run with a 4-stage encoder
+$[80,160,320,480]\,({=}16.9$M, the ``17M'' variants). The circuit itself adds
+negligible parameters.
+
+\section{Methods: Training, Evaluation, Hardware}
+Models were trained with Adam~\cite{adam} (lr~$10^{-3}$, cosine, 5-ep warmup), a
+combined cross-entropy~+~soft-Dice loss~\cite{vnet} with inverse-frequency class
+weights, mixed precision, gradient clipping, early stopping (patience~15, min
+250 epochs), up to 400 epochs, batch 16 (2D)/2 (3D), on a single RTX~3090.
+
+\paragraph{Metrics and protocol.} We report per-class and mean foreground Dice.
+The training metric is a micro-average (pixels pooled); for statistics we report
+the mean of per-subject Dice~$\pm$~s.d.\ ($n{=}6$). Because the 20-voxel
+foreground filter is applied to the 2D test split, we additionally report an
+honest full-volume 2D evaluation over all 96 slices (Fig.~\ref{fig:eval}).
+Statistics: bootstrap 95\% CIs of paired differences and Cohen's~$d$ as primary,
+Friedman and Holm-corrected Wilcoxon as exploratory.
+\dfig{figures/fig12.pdf}{Evaluation protocol.}{fig:eval}
+
+\paragraph{Software.} Python~3.12, PyTorch~2.6 (CUDA~12.4), PennyLane~0.44,
+Qiskit~2.4; $2{\times}$RTX~3090 (24\,GB). The full workflow is shown in
+Fig.~\ref{fig:flow}.
+\dfig{figures/fig13.pdf}{Full experimental workflow.}{fig:flow}
+
+\section{Results}
+All Dice values are per-subject mean~$\pm$~s.d.\ ($n{=}6$).
+
+\subsection{2D and 3D accuracy at matched capacity}
+On foreground-bearing 2D slices the nine models were indistinguishable (Friedman
+$\chi^2{=}6.09$, $p{=}0.637$); in 3D they differed ($\chi^2{=}20.58$,
+$p{=}0.008$). The mesencephalon is the hardest subregion, the medulla the
+easiest (Tables~\ref{tab:2d},~\ref{tab:3d}).
+
+\begin{table}[t]\centering
+\caption{2D, foreground-bearing slices. Q/H/C = quantum/hybrid/classical.}
+\label{tab:2d}\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
+\toprule
+Model & T & Par. & mean Dice & medulla & pons & mesenc.\\
+\midrule
+Qiskit-QCNN & Q & 16.9M & $.932{\pm}.007$ & .947 & .935 & .915\\
+MARIN & C & 17.4M & $.932{\pm}.015$ & .948 & .939 & .909\\
+Hybrid-QCNN & H & 16.9M & $.932{\pm}.011$ & .946 & .938 & .910\\
+MipaimUNet & C & 17.3M & $.931{\pm}.015$ & .948 & .936 & .910\\
+PennyLane-QCNN & Q & 16.9M & $.930{\pm}.013$ & .947 & .936 & .906\\
+SwinUNETR & C & 16.8M & $.929{\pm}.014$ & .943 & .935 & .910\\
+ClassicalCNN & C & 17.0M & $.929{\pm}.013$ & .944 & .934 & .908\\
+ACAPULCO & C & 17.4M & $.928{\pm}.017$ & .936 & .933 & .915\\
+CerebNet & C & 16.7M & $.927{\pm}.016$ & .937 & .929 & .915\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering
+\caption{3D, whole volumes.}
+\label{tab:3d}\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
+\toprule
+Model & T & Par. & mean Dice & medulla & pons & mesenc.\\
+\midrule
+MipaimUNet & C & 17.8M & $.940{\pm}.013$ & .943 & .942 & .933\\
+ACAPULCO & C & 17.1M & $.937{\pm}.017$ & .938 & .942 & .930\\
+PennyLane-QCNN & Q & 17.6M & $.935{\pm}.016$ & .943 & .942 & .921\\
+MARIN & C & 17.1M & $.934{\pm}.019$ & .948 & .938 & .916\\
+SwinUNETR & C & 17.1M & $.932{\pm}.020$ & .944 & .938 & .914\\
+Hybrid-QCNN & H & 17.6M & $.931{\pm}.022$ & .935 & .935 & .923\\
+CerebNet & C & 18.0M & $.930{\pm}.018$ & .939 & .937 & .915\\
+Qiskit-QCNN & Q & 17.6M & $.925{\pm}.032$ & .919 & .934 & .921\\
+ClassicalCNN & C & 17.0M & $.920{\pm}.037$ & .933 & .917 & .913\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Capacity ablation}
+Widening the 2D quantum encoder $6.1$M${\to}16.9$M gave no gain (PennyLane
+$\Delta{=}{-}0.0023$, 95\%\,CI $[-0.0046,-0.0005]$; Qiskit $-0.0007$; Hybrid
+$+0.0019$; none significant after Holm). The 8-qubit bottleneck, not the
+backbone, caps performance.
+
+\subsection{Honest full-volume evaluation}
+Scoring all 96 slices per subject jumps Friedman from $p{=}0.637$ to
+$\chi^2{=}39.5$, $p{<}0.0001$, widening the spread from ${\approx}0.006$ to
+$0.059$ (Table~\ref{tab:c2}, Fig.~\ref{fig:c2}). The filter inflated 2D Dice by
+$0.018$--$0.087$ and re-ranked the field (MARIN, a co-leader, falls to last). The
+hybrid quantum models are the most robust; pooled quantum/hybrid vs classical
+$0.894$ vs $0.878$, $\Delta{=}{+}0.016$, Wilcoxon $p{=}0.031$.
+
+\begin{table}[t]\centering
+\caption{2D Dice: foreground-only vs honest full-volume ($n{=}6$).}
+\label{tab:c2}\setlength{\tabcolsep}{6pt}
+\begin{tabular}{llccc}
+\toprule
+Model & Type & Foreground-only & Full-volume & $\Delta$\\
+\midrule
+Qiskit-QCNN (17M) & Q & 0.932 & \textbf{0.905} & $-0.028$\\
+CerebNet & C & 0.927 & 0.899 & $-0.028$\\
+ClassicalCNN & C & 0.929 & 0.898 & $-0.031$\\
+Hybrid-QCNN (17M) & H & 0.932 & 0.898 & $-0.034$\\
+SwinUNETR & C & 0.929 & 0.883 & $-0.046$\\
+PennyLane-QCNN (17M) & Q & 0.930 & 0.880 & $-0.050$\\
+MipaimUNet & C & 0.931 & 0.875 & $-0.056$\\
+ACAPULCO & C & 0.928 & 0.866 & $-0.062$\\
+MARIN & C & 0.932 & \textbf{0.845} & $-0.087$\\
+\midrule
+PennyLane-QCNN (6M) & Q & 0.932 & 0.914 & $-0.018$\\
+Qiskit-QCNN (6M) & Q & 0.933 & 0.912 & $-0.022$\\
+Hybrid-QCNN (6M) & H & 0.930 & 0.899 & $-0.031$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.82\textwidth]{figures/fig_fullvol_vs_fg_2d.png}
+\caption{2D per-subject Dice: foreground-only (grey) vs full-volume (red =
+quantum/hybrid, blue = classical), sorted by full-volume score.}
+\label{fig:c2}
+\end{figure}
+
+\subsection{Computational cost}
+2D quantum runs took $8.9$--$13.6$\,h vs $0.3$--$1.0$\,h for classical models; in
+3D the gap narrows (quantum $28$--$35$\,min). The cost reflects per-sample,
+CPU-bound statevector simulation (Fig.~\ref{fig:cost}).
+\begin{figure}[t]\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_cost_2d.png}
+\caption{2D accuracy vs training time (log scale).}
+\label{fig:cost}
+\end{figure}
+
+\section{Discussion}
+At matched capacity, hybrid quantum--classical U-Nets match classical networks in
+2D and trail slightly in 3D. Their advantage is parameter efficiency, not
+accuracy: an 8-qubit bottleneck substitutes for several million convolutional
+parameters without loss of Dice, but caps attainable accuracy. The most
+consequential finding is methodological: honest full-volume scoring separated
+models that the foreground-only protocol made identical and reordered the
+ranking, with the hybrid quantum models (and the narrow 6.1M variants) most
+robust to empty-slice false positives---plausibly because the additive global
+quantum branch acts as a conservative channel gate. Brainstem-segmentation
+benchmarks should therefore be reported on whole volumes. Clinically, all models
+were accurate enough (medulla/pons Dice ${\sim}0.94$) to support SCA2 atrophy
+measurements; a fast classical 3D U-Net is the pragmatic deployment choice.
+
+\section{Future Work}
+\textbf{Methodology:} multi-seed training, larger multi-centre cohorts (the
+present $n{=}6$ test set limits power), full-volume re-training, and re-training
+with the corrected weighted-Dice loss (\S\ref{sec:lim}); boundary metrics
+(Hausdorff, surface Dice). \textbf{Quantum:} execution on real hardware with
+noise-aware training, spatially-aware encodings beyond global pooling, and
+vectorised circuit evaluation. \textbf{Maps in future studies (Fig.~\ref{fig:maps}):}
+(i)~population \emph{atrophy/probabilistic atlases}---voxel-wise statistics across
+the cohort to localise pontine/medullary degeneration and correlate with clinical
+scores and CAG-repeat length, turning segmentation into a biomarker pipeline;
+(ii)~\emph{self-organizing maps}~\cite{som} and quantum SOMs of the learned
+bottleneck representations for unsupervised subtype discovery, a natural
+extension of the quantum theme; (iii)~\emph{saliency and uncertainty maps}
+(MC-dropout/ensembles) for interpretability and clinical trust.
+\dfig{figures/fig14.pdf}{From per-subject segmentations to population atrophy
+maps.}{fig:maps}
+
+\section{Limitations}\label{sec:lim}
+Small test set ($n{=}6$; significance underpowered, effect sizes primary); single
+seed; single-centre data; quantum circuits classically simulated. A code audit
+found the class-weighted Dice term was multiplied by class weights without
+renormalisation, mis-scaling the loss (and producing negative loss values during
+training); the fix is applied for future runs, so the reported \emph{relative}
+comparison is internally consistent but absolute values may shift after
+re-training.
+
+\section{Conclusion}
+On an SCA2-relevant brainstem cohort from CNEURO, parameter-matched quantum and
+classical segmentation networks are comparably accurate, with quantum models
+offering parameter efficiency at substantial simulated compute cost. Honest
+full-volume evaluation reveals hybrid quantum models as the most robust to
+empty-slice false positives, while in 3D classical networks retain a small edge.
+The findings support continued, carefully-controlled investigation of hybrid
+quantum--classical segmentation, whole-volume evaluation standards, and the use
+of atrophy, self-organizing, and uncertainty maps in future studies.
+
+\subsubsection*{Acknowledgements.} \todo{Funding and data-collection acknowledgements.}
+
+\begin{thebibliography}{99}
+\bibitem{unet} Ronneberger, O., Fischer, P., Brox, T.: U-Net: convolutional networks for biomedical image segmentation. MICCAI (2015)
+\bibitem{unet3d} \c{C}i\c{c}ek, \"O., et al.: 3D U-Net: learning dense volumetric segmentation from sparse annotation. MICCAI (2016)
+\bibitem{vnet} Milletari, F., Navab, N., Ahmadi, S.A.: V-Net: fully convolutional neural networks for volumetric medical image segmentation. 3DV (2016)
+\bibitem{cerebnet} Faber, J., et al.: CerebNet: a fast and reliable deep-learning pipeline for detailed cerebellum sub-segmentation. NeuroImage (2022)
+\bibitem{acapulco} Han, S., Carass, A., et al.: Automatic cerebellum anatomical parcellation using U-Net with locally constrained optimization (ACAPULCO). NeuroImage (2020)
+\bibitem{swinunetr} Hatamizadeh, A., et al.: Swin UNETR: Swin transformers for semantic segmentation of brain tumors in MRI images. MICCAI BrainLes (2022)
+\bibitem{swin} Liu, Z., et al.: Swin Transformer: hierarchical vision transformer using shifted windows. ICCV (2021)
+\bibitem{inception} Szegedy, C., et al.: Going deeper with convolutions. CVPR (2015)
+\bibitem{cbam} Woo, S., Park, J., Lee, J.Y., Kweon, I.S.: CBAM: convolutional block attention module. ECCV (2018)
+\bibitem{qcnn} Cong, I., Choi, S., Lukin, M.D.: Quantum convolutional neural networks. Nature Physics 15, 1273--1278 (2019)
+\bibitem{pennylane} Bergholm, V., et al.: PennyLane: automatic differentiation of hybrid quantum-classical computations. arXiv:1811.04968 (2018)
+\bibitem{qiskit} Qiskit contributors: Qiskit: an open-source framework for quantum computing (2023)
+\bibitem{n4} Tustison, N.J., et al.: N4ITK: improved N3 bias correction. IEEE TMI 29(6), 1310--1320 (2010)
+\bibitem{adam} Kingma, D.P., Ba, J.: Adam: a method for stochastic optimization. ICLR (2015)
+\bibitem{pulst} Pulst, S.M., et al.: Moderate expansion of a normally biallelic trinucleotide repeat in spinocerebellar ataxia type 2. Nature Genetics 14, 269--276 (1996)
+\bibitem{velazquez} Velazquez-Perez, L., Rodriguez-Labrada, R., Fernandez-Ruiz, J.: Spinocerebellar ataxia type 2: clinicogenetic aspects, mechanistic insights, and management. \todo{verify venue/year}
+\bibitem{som} Kohonen, T.: The self-organizing map. Proceedings of the IEEE 78(9), 1464--1480 (1990)
+\bibitem{helsinki} World Medical Association: Declaration of Helsinki: ethical principles for medical research involving human subjects. JAMA 310(20), 2191--2194 (2013)
+\bibitem{nonparam} Friedman, M.: The use of ranks to avoid the assumption of normality. JASA 32, 675--701 (1937); Wilcoxon, F.: Individual comparisons by ranking methods. Biometrics Bulletin 1, 80--83 (1945)
+\end{thebibliography}
+\end{document}

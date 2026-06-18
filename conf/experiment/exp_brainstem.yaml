@@ -1,0 +1,53 @@
+# @package _global_
+# Brainstem segmentation benchmark experiment.
+#
+# Switch between 2-D and 3-D by overriding dataset.spatial_dims on the CLI:
+#
+#   # 2-D slice segmentation (fast, all models)
+#   python run/pipeline/train_medical.py experiment=exp_brainstem \
+#       dataset.spatial_dims=2 model=classical_cnn_brainstem
+#
+#   # 3-D volumetric segmentation (slow, large GPU memory)
+#   python run/pipeline/train_medical.py experiment=exp_brainstem \
+#       dataset.spatial_dims=3 model=mipaim_unet_brainstem
+#
+#   # Multirun — compare all models in 2-D
+#   python run/pipeline/train_medical.py -m experiment=exp_brainstem \
+#       dataset.spatial_dims=2 \
+#       model=classical_cnn_brainstem,qcnn_pennylane_brainstem,\
+#             qcnn_qiskit_brainstem,hybrid_qcnn_brainstem,\
+#             mipaim_unet_brainstem,swin_unetr_brainstem
+
+defaults:
+  - override /dataset: brainstem
+
+# dataset.spatial_dims can be overridden on the CLI; default is 2
+dataset:
+  spatial_dims: 2
+
+training:
+  epochs: 400
+  batch_size: 16            # for 3-D models reduce to 1-2 on the CLI
+  learning_rate: 0.001
+  optimizer: adam
+  weight_decay: 5e-4
+  scheduler: cosine
+  warmup_epochs: 5
+  early_stopping_patience: 15
+  early_stopping_min_epoch: 250
+  gradient_clip_val: 1.0
+  use_amp: true
+  use_class_weights: true
+  loss: combined
+  dice_weight: 0.5
+  monitor: val_mean_dice
+
+evaluation:
+  metrics:
+    - mean_dice
+    - pixel_accuracy
+    - dice_class_1
+    - dice_class_2
+    - dice_class_3
+  save_confusion_matrix: false
+  save_predictions: true

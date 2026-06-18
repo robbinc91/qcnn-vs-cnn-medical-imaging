@@ -1,0 +1,10 @@
+flowchart LR
+  A["T1-w MRI<br/>CNEURO, 39 sujetos"] --> B["Corrección de<br/>campo de sesgo N4"]
+  B --> C["Registro afín<br/>al espacio MNI"]
+  C --> D["Recorte a FOV tronco<br/>80 x 80 x 96"]
+  D --> E["Normalización z<br/>por volumen"]
+  E --> F{"spatial_dims"}
+  F -->|2D| G["Cortes axiales 80 x 80<br/>(entren.: cortes con<br/>&ge;20 vóxeles fg)"]
+  F -->|3D| H["Volúmenes completos<br/>80 x 80 x 96"]
+  G --> I["4 clases: fondo /<br/>bulbo / protuberancia / mesencéfalo"]
+  H --> I

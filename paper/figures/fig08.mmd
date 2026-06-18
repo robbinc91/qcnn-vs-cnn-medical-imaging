@@ -1,0 +1,10 @@
+flowchart LR
+  I["Input -> stem conv"] --> E["Encoder: PreAct-Res stages<br/>[44,88,176,240], 2 blocks/stage"]
+  E --> B["Bottleneck<br/>2x PreAct-Res"]
+  B --> D["Decoder: ConvTranspose +<br/>PreAct-Res, concat skips"]
+  D --> H["1x1 conv -> 4 classes"]
+  subgraph block["PreAct-Res block"]
+    direction LR
+    n1["InstanceNorm"] --> r1["ReLU"] --> c1["Conv"] --> add(("+"))
+    in["x"] --> add
+  end

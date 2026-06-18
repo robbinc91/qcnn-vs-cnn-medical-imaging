@@ -1,0 +1,50 @@
+dataset:
+  name: brainstem
+  num_classes: 4
+  channels: 1
+  image_size: 80
+  depth_size: 96
+  spatial_dims: 2
+  data_dir: datatrain/
+  min_brainstem_voxels: 20
+  num_workers: 0
+  val_split: 0.15
+  test_split: 0.15
+  binary_classes: null
+  subsample: null
+model:
+  name: acapulco
+  type: classical
+  blocks_per_stage: 2
+seed: 42
+device: auto
+training:
+  epochs: 400
+  batch_size: 16
+  learning_rate: 0.001
+  optimizer: adam
+  weight_decay: 0.0005
+  scheduler: cosine
+  early_stopping_patience: 15
+  warmup_epochs: 5
+  gradient_clip_val: 1.0
+  use_amp: true
+  use_class_weights: true
+  loss: combined
+  dice_weight: 0.5
+  monitor: val_mean_dice
+  early_stopping_min_epoch: 250
+evaluation:
+  metrics:
+  - mean_dice
+  - pixel_accuracy
+  - dice_class_1
+  - dice_class_2
+  - dice_class_3
+  save_confusion_matrix: false
+  save_predictions: true
+logging:
+  tensorboard: true
+  log_interval: 10
+  save_checkpoints: true
+  checkpoint_dir: checkpoints/

@@ -1,0 +1,12 @@
+# Classical CNN U-Net for brainstem segmentation
+# Auto-selected channel widths (~17 M params, 4 downsamples in both 2D and 3D):
+#   2D: [64, 128, 256, 352]   → ~17.0 M
+#   3D: [38, 76, 156, 204]    → ~16.9 M
+
+name: classical_cnn
+type: classical
+
+architecture:
+  # conv_channels: omitted → auto-selected from dataset.spatial_dims
+  batch_norm: true
+  dropout: 0.2

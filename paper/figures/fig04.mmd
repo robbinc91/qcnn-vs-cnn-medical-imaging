@@ -1,0 +1,9 @@
+flowchart LR
+  I["Input"] --> E["Encoder: DoubleConv stages<br/>[64,128,256,352], 4x MaxPool"]
+  E --> B["Bottleneck<br/>DoubleConv"]
+  B --> D["Decoder: ConvTranspose +<br/>DoubleConv, concat skips"]
+  D --> H["1x1 conv -> 4 classes"]
+  subgraph block["DoubleConv block"]
+    direction LR
+    c1["Conv 3x3"] --> n1["BatchNorm"] --> r1["ReLU"] --> c2["Conv 3x3"] --> n2["BatchNorm"] --> r2["ReLU"]
+  end

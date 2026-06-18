@@ -1,0 +1,14 @@
+flowchart LR
+  I["Entrada 1x80x80"] --> E1["Codif. 1"] --> P1["pool"] --> E2["Codif. 2"] --> P2["pool"] --> E3["Codif. 3"] --> P3["pool"]
+  P3 --> B["Cuello de botella x"]
+  B --> GAP["Prom. global -> vector C"]
+  GAP --> PIN["Lineal -> n_qubits, tanh*pi"]
+  PIN --> Q["Circuito cuántico variacional"]
+  Q --> POUT["Linear -> C"]
+  POUT --> ADD(("+"))
+  B --> ADD
+  ADD --> D3["Decod. 3"] --> U2["subir"] --> D2["Decod. 2"] --> U1["subir"] --> D1["Decod. 1"]
+  D1 --> H["conv 1x1 -> 4 clases"]
+  E3 -. salto .-> D3
+  E2 -. salto .-> D2
+  E1 -. salto .-> D1

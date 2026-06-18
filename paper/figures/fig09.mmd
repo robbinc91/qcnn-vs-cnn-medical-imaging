@@ -1,0 +1,14 @@
+flowchart LR
+  I["Input"] --> E["Encoder: MultiScale PreAct blocks<br/>[44,88,176,240]"]
+  E --> B["Bottleneck<br/>competitive maxout + MultiScale"]
+  B --> D["Decoder: ConvTranspose +<br/>MultiScale, CBAM-gated skips"]
+  D --> H["1x1 conv -> 4 classes"]
+  subgraph block["MultiScale PreAct block"]
+    direction TB
+    pa["InstanceNorm -> PReLU"]
+    pa --> d1["Conv dil=1 (out/2)"]
+    pa --> d2["Conv dil=2 (out/2)"]
+    d1 --> cc["concat"]
+    d2 --> cc
+    cc --> ig["integrate Conv 3x3"]
+  end

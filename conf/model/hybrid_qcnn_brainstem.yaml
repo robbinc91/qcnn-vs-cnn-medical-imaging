@@ -1,0 +1,22 @@
+# Hybrid quantum-classical U-Net for brainstem segmentation. Architecturally
+# the same as qcnn_pennylane (conv U-Net + additive global quantum branch),
+# differing only in ansatz layers. conv_channels [80,160,320] => ~6.09M in 2D
+# and ~17.6M in 3D. The native 2D model is ~1/3 of the ~17M classical field
+# (NOT param-matched in 2D); the param-matched 2D study uses [80,160,320,480].
+# (Earlier "sized to match SwinUNETR ~6M 2D" was wrong: SwinUNETR-2D is ~16.8M.)
+
+name: hybrid_qcnn
+type: hybrid
+framework: pennylane
+
+classical_encoder:
+  conv_channels: [80, 160, 320]
+
+quantum:
+  num_qubits: 8
+  num_layers: 3
+  diff_method: best
+  device: default.qubit
+
+classical_decoder:
+  dropout: 0.2

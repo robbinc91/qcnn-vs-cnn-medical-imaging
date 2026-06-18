@@ -1,0 +1,19 @@
+# MARIN-Net: Multi-scale Attended Residual Instance-Normalized Network
+#
+# Novel architecture combining the best elements from each benchmark model:
+#   ACAPULCO   → pre-activation blocks (IN → PReLU → Conv) + instance norm
+#   MipaimUNet → CBAM channel+spatial attention gates on skip connections
+#   CerebNet   → competitive maxout shortcut at the bottleneck
+#   All        → dual dilated branches (dilation 1 ‖ dilation 2) in every
+#                block for local + wider receptive field at no extra cost
+#
+# Auto-selected channel widths if enc_channels is omitted (defaults in marin.py;
+# both build 4 encoder stages, ~17M params):
+#   2D: [44, 88, 176, 240]  → ~17.4 M
+#   3D: [26, 52, 104, 140]  → ~17.1 M
+
+name: marin
+type: classical
+
+blocks_per_stage: 2   # MultiScalePreActBlocks per encoder/decoder stage
+# enc_channels: omitted → auto-selected from dataset.spatial_dims

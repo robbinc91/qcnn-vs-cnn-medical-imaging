@@ -1,0 +1,27 @@
+# Brainstem MRI dataset (3D NIfTI → 2D axial slice segmentation)
+# Subjects a31–a70 (39 valid subjects after excluding a37)
+# Labels: 0=background, 1=medulla, 2=pons, 3=mesencephalon
+
+name: brainstem
+num_classes: 4     # background + 3 brainstem structures
+channels: 1
+image_size: 80
+depth_size: 96
+
+# --- Key switch -----------------------------------------------------------------
+# 2 → 2D axial slice segmentation  (input shape: B×1×80×80)
+# 3 → 3D volumetric segmentation   (input shape: B×1×80×80×96)
+spatial_dims: 2
+# --------------------------------------------------------------------------------
+
+data_dir: datatrain/
+# Min foreground voxels for a 2D axial slice to be kept. NOTE: applied to the
+# val/test splits as well, so 2D evaluation excludes empty slices and yields an
+# optimistic Dice that is not directly comparable to the 3D (full-volume) models.
+min_brainstem_voxels: 20
+num_workers: 0
+
+val_split: 0.15
+test_split: 0.15
+binary_classes: null
+subsample: null

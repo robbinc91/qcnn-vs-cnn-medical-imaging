@@ -1,0 +1,18 @@
+# ACAPULCO-style parcellating U-Net for brainstem segmentation
+# Based on Han et al., NeuroImage 2020 (https://pubmed.ncbi.nlm.nih.gov/32438049/)
+#
+# Architecture: pre-activation ResNet U-Net with instance normalization.
+# Channel widths auto-selected by spatial_dims if enc_channels is omitted
+# (defaults defined in acapulco.py; both build 4 encoder stages, ~17M params):
+#   2D: [44, 88, 176, 240]  → ~17.4 M params
+#   3D: [26, 52, 104, 140]  → ~17.1 M params
+#
+# Override on CLI:
+#   model.enc_channels=[32,64,128]
+#   model.blocks_per_stage=2
+
+name: acapulco
+type: classical
+
+blocks_per_stage: 2    # pre-activation ResBlocks per encoder/decoder stage
+# enc_channels: omitted → auto-selected based on dataset.spatial_dims

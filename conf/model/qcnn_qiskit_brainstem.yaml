@@ -1,0 +1,21 @@
+# Qiskit hybrid quantum-classical U-Net for brainstem segmentation.
+# Classical conv U-Net (3-stage encoder below) + additive global quantum branch.
+# enc_channels [80,160,320] => ~6.09M in 2D and ~17.6M in 3D for the SAME config.
+# The native 2D model is ~1/3 of the ~17M classical field (NOT param-matched in
+# 2D); the parameter-matched 2D study overrides enc_channels=[80,160,320,480].
+# (Earlier "sized to match SwinUNETR ~6M 2D" was wrong: SwinUNETR-2D is ~16.8M.)
+
+name: qcnn_qiskit
+type: quantum
+framework: qiskit
+
+enc_channels: [80, 160, 320]
+
+quantum:
+  num_qubits: 4
+  feature_map: zz_feature_map
+  ansatz: real_amplitudes
+  entanglement: linear
+  reps: 1
+
+decoder_dropout: 0.2

@@ -14,13 +14,29 @@ training:
   weight_decay: 1e-4
   scheduler: cosine
   early_stopping_patience: 10
+  # LR warmup: linearly ramp from 0 → lr over this many epochs, then cosine decay
+  warmup_epochs: 0
+  # Gradient clipping: set to e.g. 1.0 for quantum models (parameter-shift gradients)
+  gradient_clip_val: null
+  # Mixed-precision training (fp16 activations, fp32 weights/grads)
+  # Reduces activation memory ~50%; has no effect on CPU or quantum circuits
+  use_amp: false
+  # Inverse-frequency class weighting for imbalanced datasets
+  use_class_weights: false
+  # Loss function: 'ce', 'dice', or 'combined' (CE + Dice)
+  loss: ce
+  # Blending coefficient for 'combined' loss (0=pure CE, 1=pure Dice)
+  dice_weight: 0.5
+  # Metric to monitor for early stopping and best-model checkpointing
+  monitor: val_mean_dice
 
 evaluation:
   metrics:
-    - accuracy
-    - f1_macro
-    - precision
-    - recall
+    - mean_dice
+    - pixel_accuracy
+    - dice_class_1
+    - dice_class_2
+    - dice_class_3
   save_confusion_matrix: true
   save_predictions: true
 
@@ -32,7 +48,7 @@ logging:
 
 hydra:
   run:
-    dir: run/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: run/outputs/${model.name}_${dataset.spatial_dims}d
   sweep:
     dir: run/outputs/sweeps/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: ${hydra.job.num}
+    subdir: ${model.name}_${dataset.spatial_dims}d

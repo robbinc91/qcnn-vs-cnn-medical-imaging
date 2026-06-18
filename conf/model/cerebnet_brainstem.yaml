@@ -1,0 +1,12 @@
+# CerebNet-style competitive-dense U-Net for brainstem segmentation
+# Based on FastSurferCNN / CerebNet (Faber et al., NeuroImage 2022)
+#
+# 2D: 5×5 kernels, ~16.7M params with filters=160
+# 3D: 3×3×3 kernels, ~18.0M params with filters=160
+# Kernel size is selected automatically from dataset.spatial_dims.
+
+name: cerebnet
+type: classical
+
+filters: 160         # uniform channel width throughout the network (~17 M params in both 2D and 3D)
+num_enc_stages: 4    # encoder depth (same number of decoder stages)
