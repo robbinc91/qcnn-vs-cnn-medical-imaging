@@ -1,0 +1,18 @@
+# Quaternion ACAPULCO parcellating U-Net for brainstem segmentation.
+#
+# Quaternion port of the ACAPULCO architecture (pre-activation residual blocks +
+# instance normalization). Every conv is a quaternion conv (Hamilton-product
+# weight sharing). InstanceNorm/ReLU act split over the 4*Q real channels.
+#
+# enc_channels are REAL channels (= 4 x quaternion). A quaternion conv has 1/4
+# the params of a real conv at the same real width, so widths are ~2x the
+# classical acapulco defaults to match ~17M:
+#   2D: [84, 168, 336, 448]  → ~16.7 M
+#   3D: [48, 96, 192, 264]   → ~16.9 M
+# Auto-selected from dataset.spatial_dims if enc_channels is omitted.
+
+name: quaternion_acapulco
+type: quaternion
+
+blocks_per_stage: 2
+# enc_channels: omitted → auto-selected based on dataset.spatial_dims

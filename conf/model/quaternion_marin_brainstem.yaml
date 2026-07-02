@@ -1,0 +1,18 @@
+# Quaternion MARIN-Net for brainstem segmentation.
+#
+# Quaternion port of MARIN-Net: dual multi-scale dilated branches (dil 1 ‖ 2),
+# competitive maxout shortcut at the bottleneck, and CBAM attention gates on the
+# skip connections. Every conv is a quaternion conv (Hamilton-product weight
+# sharing); InstanceNorm/PReLU and CBAM act split over the 4*Q real channels.
+#
+# enc_channels are REAL channels (= 4 x quaternion), ~2x the classical marin
+# defaults to match ~17M:
+#   2D: [84, 168, 336, 448]  → ~16.9 M
+#   3D: [48, 96, 192, 264]   → ~17.0 M
+# Auto-selected from dataset.spatial_dims if enc_channels is omitted.
+
+name: quaternion_marin
+type: quaternion
+
+blocks_per_stage: 2
+# enc_channels: omitted → auto-selected based on dataset.spatial_dims

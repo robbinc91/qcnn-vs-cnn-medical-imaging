@@ -1,0 +1,24 @@
+# Quaternion U-Net for brainstem segmentation.
+#
+# Quaternion-valued U-Net: structurally identical to the classical CNN U-Net,
+# but every convolution is a quaternion convolution (Hamilton-product weight
+# sharing). Forms the third axis of the benchmark: classical vs quantum vs
+# quaternion structured convolutions, all at a matched ~17M-parameter budget.
+#
+# enc_channels are REAL channels (= 4 x quaternion channels, so each must be
+# divisible by 4). A quaternion conv has 1/4 the params of a real conv at the
+# same real width, so widths are ~2x the classical_cnn defaults to match ~17M:
+#   2D: [120, 240, 480, 672]  → ~17.1 M  (≈ classical [64, 128, 256, 352])
+#   3D: [72, 144, 288, 384]   → ~17.1 M  (≈ classical [38, 76, 156, 204])
+# Auto-selected from dataset.spatial_dims if enc_channels is omitted.
+#
+# Override on CLI:
+#   model.enc_channels=[64,128,256]
+#   model.decoder_dropout=0.1
+
+name: quaternion_unet
+type: quaternion
+
+# enc_channels: omitted → auto-selected based on dataset.spatial_dims
+batch_norm: true
+decoder_dropout: 0.2

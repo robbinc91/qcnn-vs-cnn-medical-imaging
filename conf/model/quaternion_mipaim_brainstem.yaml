@@ -1,0 +1,23 @@
+# Quaternion MipaimUNet for brainstem segmentation.
+#
+# Quaternion port of MipaimUNet: reduced-dimension inception blocks (4 parallel
+# branches) with CBAM attention refinement on skip connections. Every conv is a
+# quaternion conv (Hamilton-product weight sharing); InstanceNorm/ReLU and CBAM
+# act split over the 4*Q real channels; inception branches merged component-wise.
+#
+# filters_dim are 5 REAL widths per level (= 4 x quaternion; each divisible by 4).
+# A quaternion conv has 1/4 the params of a real conv at the same real width, so
+# widths are ~2x the classical mipaim defaults to match ~17M:
+#   2D: [128, 256, 512, 1152, 2048]  → ~17.4 M
+#   3D: [88, 176, 352, 704, 1408]    → ~16.5 M
+# Auto-selected from dataset.spatial_dims if filters_dim is omitted.
+
+name: quaternion_mipaim
+type: quaternion
+
+only_3x3_filters: true
+instance_normalization: true
+skip_connections_treatment_number: 3
+skip_connections_method: attention
+force_unet: false
+# filters_dim: omitted → auto-selected based on dataset.spatial_dims

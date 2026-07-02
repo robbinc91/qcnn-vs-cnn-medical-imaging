@@ -29,7 +29,7 @@ def ModelFactory(cfg: Any) -> nn.Module:
         Instantiated model.
     """
     # Import all model modules to trigger registration
-    from . import classical, hybrid, quantum  # noqa: F401
+    from . import classical, hybrid, quantum, quaternion  # noqa: F401
 
     name = cfg.model.name
     if name not in MODEL_REGISTRY:
