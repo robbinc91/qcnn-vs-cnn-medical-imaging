@@ -16,7 +16,7 @@ quantum:
   num_qubits: 8
   num_layers: 3
   diff_method: best
-  device: default.qubit
+  device: lightning.qubit
 
 classical_decoder:
   dropout: 0.2

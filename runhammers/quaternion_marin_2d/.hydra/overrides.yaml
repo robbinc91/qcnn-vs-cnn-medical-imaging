@@ -1,0 +1,3 @@
+- +experiment=exp_hammers
+- model=quaternion_marin_hammers
+- dataset.spatial_dims=2

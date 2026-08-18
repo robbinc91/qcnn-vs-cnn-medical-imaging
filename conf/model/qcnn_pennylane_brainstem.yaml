@@ -18,6 +18,6 @@ quantum:
   entanglement: circular
   ansatz: strongly_entangling
   diff_method: best
-  device: default.qubit
+  device: lightning.qubit
 
 decoder_dropout: 0.2

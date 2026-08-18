@@ -18,6 +18,7 @@ from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 
 from .._ops import SpatialOps, get_ops
 from ..registry import register_model
@@ -83,7 +84,7 @@ class CompetitiveEncoderBlock(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Returns (pooled, pre_pool_features, pool_indices)."""
-        features = self.dense(x)
+        features = cp.checkpoint(self.dense, x, use_reentrant=False) if self.training else self.dense(x)
         pooled, indices = self.pool(features)
         return pooled, features, indices
 
@@ -111,7 +112,7 @@ class CompetitiveDecoderBlock(nn.Module):
     ) -> torch.Tensor:
         x = self.unpool(x, indices, output_size=skip.shape)
         x = torch.max(x, skip)          # competitive fusion
-        return self.dense(x)
+        return cp.checkpoint(self.dense, x, use_reentrant=False) if self.training else self.dense(x)
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +172,9 @@ class CerebNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.training and not x.requires_grad:
+            x = x.detach().requires_grad_(True)
+
         enc_features: List[torch.Tensor] = []
         enc_indices:  List[torch.Tensor] = []
 
@@ -179,7 +183,7 @@ class CerebNet(nn.Module):
             enc_features.append(features)
             enc_indices.append(indices)
 
-        x = self.bottleneck(x)
+        x = cp.checkpoint(self.bottleneck, x, use_reentrant=False) if self.training else self.bottleneck(x)
 
         for dec, skip, idx in zip(
             self.dec_blocks,

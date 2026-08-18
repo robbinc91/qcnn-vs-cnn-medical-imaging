@@ -4,7 +4,7 @@ Writes one CSV row per (model, subject) as it goes and flushes, so progress is
 visible and partial results survive. Fast classical models first, then quantum.
 """
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import sys
 import time
@@ -39,6 +39,7 @@ def load_model(run_dir):
         state = state["model_state_dict"]
     model.load_state_dict(state)
     model.eval()
+    model = model.cuda()
     return model, cfg
 
 
@@ -56,7 +57,7 @@ def subject_dice(model, dims, sid, min_vox, chunk=32):
     for start in range(0, n, chunk):
         items = [ds[i] for i in range(start, min(start + chunk, n))]
         imgs = torch.stack([it[0] for it in items])     # (B,1,H,W[,D])
-        out = model(imgs)                                # (B,C,H,W[,D])
+        out = model(imgs.cuda())                                # (B,C,H,W[,D])
         preds.append(out.argmax(1).cpu().numpy().ravel())
         masks.append(np.stack([it[1].numpy() for it in items]).ravel())
     yp = np.concatenate(preds); yt = np.concatenate(masks)

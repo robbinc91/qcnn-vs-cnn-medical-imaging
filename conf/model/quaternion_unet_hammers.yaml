@@ -1,0 +1,5 @@
+name: quaternion_unet
+type: quaternion
+
+batch_norm: true
+decoder_dropout: 0.2

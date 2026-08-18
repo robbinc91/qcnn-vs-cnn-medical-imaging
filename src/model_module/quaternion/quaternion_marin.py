@@ -18,6 +18,7 @@ from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 
 from .._ops import SpatialOps, get_ops
 from ..registry import register_model
@@ -76,7 +77,7 @@ class QMARINEncoderStage(nn.Module):
         self.cbam = QuaternionCBAM(out_q, ops)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        x = self.blocks(self.pool(x))
+        x = cp.checkpoint(self.blocks, self.pool(x), use_reentrant=False) if self.training else self.blocks(self.pool(x))
         return x, self.cbam(x)
 
 
@@ -98,7 +99,7 @@ class QMARINDecoderStage(nn.Module):
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = self.up(x, skip.shape[2:])
         x = quaternion_cat([x, skip], [self._in_q, self._skip_q])
-        return self.blocks(x)
+        return cp.checkpoint(self.blocks, x, use_reentrant=False) if self.training else self.blocks(x)
 
 
 @register_model("quaternion_marin")
@@ -168,6 +169,9 @@ class QuaternionMARINNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.training and not x.requires_grad:
+            x = x.detach().requires_grad_(True)
+
         x = self.stem(self.input_stem(x))
 
         skips: List[torch.Tensor] = []
@@ -175,7 +179,7 @@ class QuaternionMARINNet(nn.Module):
             x, skip = enc(x)
             skips.append(skip)
 
-        x = self.bottleneck(x)
+        x = cp.checkpoint(self.bottleneck, x, use_reentrant=False) if self.training else self.bottleneck(x)
 
         for dec, skip in zip(self.dec_stages, reversed(skips)):
             x = dec(x, skip)

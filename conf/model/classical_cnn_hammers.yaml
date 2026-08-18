@@ -1,0 +1,6 @@
+name: classical_cnn
+type: classical
+
+architecture:
+  batch_norm: true
+  dropout: 0.2

@@ -1,0 +1,11 @@
+{
+  "python_version": "3.12.3",
+  "torch_version": "2.5.1+cu124",
+  "cuda_available": true,
+  "cuda_version": "12.4",
+  "gpu_model": "NVIDIA GeForce RTX 3090",
+  "gpu_count": 1,
+  "platform": "Linux-6.8.0-117-generic-x86_64-with-glibc2.39",
+  "pennylane_version": "0.45.1",
+  "qiskit_version": "2.5.0"
+}

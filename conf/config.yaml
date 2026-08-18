@@ -42,6 +42,7 @@ evaluation:
 
 logging:
   tensorboard: true
+  tensorboard_dir: tb_logs
   log_interval: 10  # batches
   save_checkpoints: true
   checkpoint_dir: checkpoints/

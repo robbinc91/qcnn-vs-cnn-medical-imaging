@@ -1,0 +1,4 @@
+- +experiment=exp_hammers
+- model=mipaim_unet_hammers
+- dataset.spatial_dims=3
+- training.batch_size=1

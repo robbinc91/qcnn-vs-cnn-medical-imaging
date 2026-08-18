@@ -1,0 +1,3 @@
+- +experiment=exp_hammers
+- model=classical_cnn_hammers
+- dataset.spatial_dims=2

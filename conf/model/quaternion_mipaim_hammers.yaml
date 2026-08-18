@@ -1,0 +1,8 @@
+name: quaternion_mipaim
+type: quaternion
+
+only_3x3_filters: true
+instance_normalization: true
+skip_connections_treatment_number: 3
+skip_connections_method: attention
+force_unet: false

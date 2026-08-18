@@ -1,0 +1,4 @@
+name: quaternion_marin
+type: quaternion
+
+blocks_per_stage: 2

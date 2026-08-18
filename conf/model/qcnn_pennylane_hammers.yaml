@@ -1,0 +1,15 @@
+name: qcnn_pennylane
+type: quantum
+framework: pennylane
+
+enc_channels: [80, 160, 320]
+
+quantum:
+  num_qubits: 8
+  num_layers: 4
+  entanglement: circular
+  ansatz: strongly_entangling
+  diff_method: best
+  device: lightning.qubit
+
+decoder_dropout: 0.2

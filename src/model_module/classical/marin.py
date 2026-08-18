@@ -33,6 +33,7 @@ from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 
 from .._ops import SpatialOps, get_ops
 from ..registry import register_model
@@ -173,7 +174,7 @@ class MARINEncoderStage(nn.Module):
         self, x: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Returns (block_output, cbam_attended_skip)."""
-        x    = self.blocks(self.pool(x))
+        x    = cp.checkpoint(self.blocks, self.pool(x), use_reentrant=False) if self.training else self.blocks(self.pool(x))
         skip = self.cbam(x)
         return x, skip
 
@@ -205,7 +206,7 @@ class MARINDecoderStage(nn.Module):
         x = self.up(x)
         if x.shape[2:] != skip.shape[2:]:
             x = self._ops.interpolate(x, skip.shape[2:])
-        return self.blocks(torch.cat([x, skip], dim=1))
+        return cp.checkpoint(self.blocks, torch.cat([x, skip], dim=1), use_reentrant=False) if self.training else self.blocks(torch.cat([x, skip], dim=1))
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +291,9 @@ class MARINNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.training and not x.requires_grad:
+            x = x.detach().requires_grad_(True)
+
         x = self.stem(x)
 
         skips: List[torch.Tensor] = []
@@ -297,7 +301,7 @@ class MARINNet(nn.Module):
             x, skip = enc(x)
             skips.append(skip)
 
-        x = self.bottleneck(x)
+        x = cp.checkpoint(self.bottleneck, x, use_reentrant=False) if self.training else self.bottleneck(x)
 
         for dec, skip in zip(self.dec_stages, reversed(skips)):
             x = dec(x, skip)

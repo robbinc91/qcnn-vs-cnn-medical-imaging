@@ -1,0 +1,8 @@
+name: swin_unetr
+type: classical
+
+num_heads: [3, 6, 12, 24]
+window_size: 7
+drop_rate: 0.0
+attn_drop_rate: 0.0
+use_checkpoint: true

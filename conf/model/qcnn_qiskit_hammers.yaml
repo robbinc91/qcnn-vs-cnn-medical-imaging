@@ -1,0 +1,16 @@
+name: qcnn_qiskit
+type: quantum
+framework: qiskit
+
+enc_channels: [80, 160, 320]
+
+quantum:
+  num_qubits: 8
+  num_layers: 4
+  feature_map: zz_feature_map
+  reps: 4
+  ansatz: twolocal
+  entanglement: circular
+  diff_method: parameter_shift
+
+decoder_dropout: 0.2

@@ -1,0 +1,5 @@
+name: cerebnet
+type: classical
+
+filters: 160
+num_enc_stages: 4

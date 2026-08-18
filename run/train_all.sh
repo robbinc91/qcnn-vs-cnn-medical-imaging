@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sequential training of all 18 model/dims combinations.
+# Sequential training of all 26 model/dims combinations.
 # Each run finishes before the next begins, preventing GPU OOM.
 # Failures in one run are logged but do NOT abort the remaining runs.
 cd "$(dirname "$0")/.."
@@ -21,6 +21,11 @@ MODELS=(
   qcnn_pennylane_brainstem
   qcnn_qiskit_brainstem
   hybrid_qcnn_brainstem
+  # Quaternion models
+  quaternion_unet_brainstem
+  quaternion_acapulco_brainstem
+  quaternion_marin_brainstem
+  quaternion_mipaim_brainstem
 )
 
 for model_cfg in "${MODELS[@]}"; do
@@ -51,4 +56,4 @@ for model_cfg in "${MODELS[@]}"; do
 done
 
 echo "Sweep finished: $(date)" | tee -a "$SUMMARY"
-echo "All 18 runs attempted."
+echo "All 26 runs attempted."

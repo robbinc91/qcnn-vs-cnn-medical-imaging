@@ -1,5 +1,6 @@
 """Training loop with early stopping, checkpointing, gradient clipping, and LR warmup."""
 
+import os
 import json
 import logging
 import time
@@ -10,6 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.amp import GradScaler, autocast
+from torch.utils.tensorboard import SummaryWriter
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR, SequentialLR, StepLR
 from torch.utils.data import DataLoader
@@ -81,6 +83,14 @@ class Trainer:
 
         monitor = t_cfg.get("monitor", "val_mean_dice")
         self.tracker = MetricsTracker(monitor=monitor, mode="max")
+        # TensorBoard
+        if self.cfg.logging.get("tensorboard", False):
+            tb_dir = str(self.cfg.logging.get("tensorboard_dir", "tb_logs"))
+            os.makedirs(tb_dir, exist_ok=True)
+            self.writer = SummaryWriter(log_dir=tb_dir)
+            logger.info(f"TensorBoard logging to {tb_dir}")
+        else:
+            self.writer = None
         self.num_params = count_parameters(model)
 
         self.grad_clip: Optional[float] = t_cfg.get("gradient_clip_val", None)
@@ -139,6 +149,11 @@ class Trainer:
         t_cfg = self.cfg.training
         best_state = None
         patience   = 0
+        try:
+            from hydra.core.hydra_config import HydraConfig
+            self._out_dir = Path(HydraConfig.get().runtime.output_dir)
+        except Exception:
+            self._out_dir = None
 
         logger.info(f"Training: {t_cfg.epochs} epochs | {self.num_params:,} params")
         t0 = time.time()
@@ -161,6 +176,16 @@ class Trainer:
             else:
                 patience += 1
 
+            if self._out_dir is not None:
+                if is_best:
+                    torch.save(best_state, self._out_dir / "best_model.pth")
+                    logger.info(f"Crash-safe checkpoint: best_model.pth (epoch {epoch})")
+                elif epoch % 10 == 0:
+                    torch.save(
+                        {k: v.clone() for k, v in self.model.state_dict().items()},
+                        self._out_dir / "checkpoint_latest.pth",
+                    )
+
             if self.scheduler is not None:
                 self.scheduler.step()
 
@@ -170,6 +195,15 @@ class Trainer:
                 f"val loss={val_loss:.4f} dice={val_metrics.get('mean_dice', 0):.4f} | "
                 f"patience {patience}/{t_cfg.early_stopping_patience}"
             )
+            if self.writer is not None:
+                lr = self.optimizer.param_groups[0]['lr']
+                self.writer.add_scalar("lr", lr, epoch)
+                self.writer.add_scalars("loss", {"train": train_loss, "val": val_loss}, epoch)
+                self.writer.add_scalar("train/mean_dice", train_dice, epoch)
+                self.writer.add_scalar("val/mean_dice", val_metrics.get("mean_dice", 0), epoch)
+                for k, v in val_metrics.items():
+                    if k != "mean_dice":
+                        self.writer.add_scalar(f"val/{k}", v, epoch)
 
             min_ep = int(t_cfg.get("early_stopping_min_epoch", 0))
             if epoch >= min_ep and patience >= t_cfg.early_stopping_patience:
@@ -255,8 +289,9 @@ class Trainer:
 
         for data, target in loader:
             data, target = data.to(self.device), target.to(self.device)
-            output = self.model(data)
-            total_loss += self.criterion(output, target).item() * data.size(0)
+            with autocast("cuda", enabled=self.use_amp):
+                output = self.model(data)
+                total_loss += self.criterion(output, target).item() * data.size(0)
 
             all_pred.append(output.argmax(dim=1).cpu().numpy().ravel())
             all_target.append(target.cpu().numpy().ravel())
@@ -281,6 +316,8 @@ class Trainer:
         with open(path, "w") as f:
             json.dump(_make_serializable(results), f, indent=2)
         logger.info(f"Results saved to {path}")
+        if self.writer is not None:
+            self.writer.close()
 
         if hasattr(self, "_best_state"):
             ckpt_path = out / "best_model.pth"

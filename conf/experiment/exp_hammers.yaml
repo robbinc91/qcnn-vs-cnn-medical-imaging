@@ -1,0 +1,50 @@
+# @package _global_
+# HAMMERS parietal-lobe segmentation benchmark experiment.
+#
+# Switch between 2-D and 3-D by overriding dataset.spatial_dims on the CLI:
+#
+#   # 2-D slice segmentation (fast, all models)
+#   python run/pipeline/train_hammers.py experiment=exp_hammers \
+#       dataset.spatial_dims=2 model=classical_cnn_hammers
+#
+#   # 3-D volumetric segmentation (slow, large GPU memory)
+#   python run/pipeline/train_hammers.py experiment=exp_hammers \
+#       dataset.spatial_dims=3 model=mipaim_unet_hammers
+
+defaults:
+  - override /dataset: hammers
+
+dataset:
+  spatial_dims: 2
+
+training:
+  epochs: 400
+  batch_size: 16
+  learning_rate: 0.001
+  optimizer: adam
+  weight_decay: 5e-4
+  scheduler: cosine
+  warmup_epochs: 5
+  early_stopping_patience: 15
+  early_stopping_min_epoch: 250
+  gradient_clip_val: 1.0
+  use_amp: true
+  use_class_weights: true
+  loss: combined
+  dice_weight: 0.5
+  monitor: val_mean_dice
+
+evaluation:
+  metrics:
+    - mean_dice
+    - pixel_accuracy
+    - dice_class_1
+    - dice_class_2
+    - dice_class_3
+    - dice_class_4
+    - dice_class_5
+    - dice_class_6
+    - dice_class_7
+    - dice_class_8
+  save_confusion_matrix: false
+  save_predictions: true

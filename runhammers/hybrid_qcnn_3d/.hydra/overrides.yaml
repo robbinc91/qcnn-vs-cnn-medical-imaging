@@ -1,0 +1,4 @@
+- +experiment=exp_hammers
+- model=hybrid_qcnn_hammers
+- dataset.spatial_dims=3
+- training.batch_size=1

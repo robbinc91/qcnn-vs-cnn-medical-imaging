@@ -158,7 +158,9 @@ def main():
         data = [vec(rows, s["run"]) for s in sel]
         labels = [s["run"].replace(f"_{dims}d", "").replace("_17M", "") for s in sel]
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.boxplot(data, labels=labels, showmeans=True)
+        ax.boxplot(data, showmeans=True)
+        ax.set_xticks(range(1, len(labels) + 1))
+        ax.set_xticklabels(labels, rotation=45)
         ax.set_ylabel("per-subject mean Dice"); ax.set_title(f"{dims}D models (n=6 subjects)")
         ax.tick_params(axis="x", rotation=45); fig.tight_layout()
         fig.savefig(f"{A}/fig_box_{dims}d.png", dpi=130); plt.close(fig)

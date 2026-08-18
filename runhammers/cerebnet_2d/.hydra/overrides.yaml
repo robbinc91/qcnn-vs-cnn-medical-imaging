@@ -1,0 +1,3 @@
+- +experiment=exp_hammers
+- model=cerebnet_hammers
+- dataset.spatial_dims=2

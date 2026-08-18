@@ -1,0 +1,88 @@
+==================================================================================
+STATISTICAL ANALYSIS — HAMMERS per-subject Dice (n=5 test subjects)
+==================================================================================
+
+## Descriptive (mean +/- std over 5 subjects)
+
+--- 2D ---
+  quaternion_marin_2d        quaternion  16.85M  Dice=0.7897±0.0082
+  marin_2d                   classical  17.42M  Dice=0.7824±0.0152
+  cerebnet_2d                classical  16.65M  Dice=0.7801±0.0084
+  acapulco_2d                classical  17.38M  Dice=0.7784±0.0179
+  mipaim_unet_2d             classical  17.27M  Dice=0.7685±0.0131
+  quaternion_acapulco_2d     quaternion  16.73M  Dice=0.7649±0.0295
+  hybrid_qcnn_2d             hybrid      6.09M  Dice=0.7527±0.0206
+  qcnn_pennylane_2d          quantum     6.09M  Dice=0.7495±0.0248
+  quaternion_mipaim_2d       quaternion  17.41M  Dice=0.7491±0.0207
+  quaternion_unet_2d         quaternion  17.07M  Dice=0.7396±0.0588
+  swin_unetr_2d              classical  16.79M  Dice=0.7278±0.0384
+  classical_cnn_2d           classical  16.95M  Dice=0.7217±0.0677
+  qcnn_qiskit_2d             quantum     6.09M  Dice=0.6569±0.0484
+--- 3D ---
+  marin_3d                   classical  17.10M  Dice=0.8040±0.0195
+  quaternion_marin_3d        quaternion  16.99M  Dice=0.8023±0.0267
+  mipaim_unet_3d             classical  17.80M  Dice=0.8004±0.0118
+  quaternion_mipaim_3d       quaternion  16.52M  Dice=0.8002±0.0168
+  acapulco_3d                classical  17.08M  Dice=0.7989±0.0178
+  quaternion_acapulco_3d     quaternion  16.93M  Dice=0.7988±0.0228
+  classical_cnn_3d           classical  16.95M  Dice=0.7974±0.0197
+  qcnn_pennylane_3d          quantum    17.59M  Dice=0.7958±0.0133
+  swin_unetr_3d              classical  17.06M  Dice=0.7939±0.0192
+  qcnn_qiskit_3d             quantum    17.59M  Dice=0.7901±0.0107
+  quaternion_unet_3d         quaternion  17.12M  Dice=0.7896±0.0198
+  cerebnet_3d                classical  17.99M  Dice=0.7829±0.0246
+  hybrid_qcnn_3d             hybrid     17.59M  Dice=0.7771±0.0144
+
+## Friedman omnibus (do models differ within a dimension?)
+
+  2D: chi2=40.77, p=0.000  (13 models)
+  3D: chi2=13.19, p=0.356  (13 models)
+
+## Paired comparisons (bootstrap CI primary; Wilcoxon exploratory)
+
+ [2D] best quaternion vs its classical base; best quantum vs best classical:
+  quaternion_marin_2d        vs marin_2d                   | Δ=+0.0073 95%CI[+0.0012,+0.0135] d=+0.94 wilcoxon_p=0.188
+  qcnn_pennylane_2d          vs marin_2d                   | Δ=-0.0329 95%CI[-0.0443,-0.0197] d=-1.98 wilcoxon_p=0.062
+  hybrid_qcnn_2d             vs marin_2d                   | Δ=-0.0296 95%CI[-0.0426,-0.0174] d=-1.81 wilcoxon_p=0.062
+
+ [3D] best quaternion vs its classical base; best quantum vs best classical:
+  quaternion_marin_3d        vs marin_3d                   | Δ=-0.0017 95%CI[-0.0189,+0.0161] d=-0.08 wilcoxon_p=0.625
+  qcnn_pennylane_3d          vs marin_3d                   | Δ=-0.0082 95%CI[-0.0345,+0.0148] d=-0.26 wilcoxon_p=0.812
+  qcnn_qiskit_3d             vs classical_cnn_3d           | Δ=-0.0072 95%CI[-0.0197,+0.0041] d=-0.46 wilcoxon_p=0.438
+
+## Quaternion vs classical counterpart (per architecture)
+
+ [2D]
+  quaternion_marin_2d        vs marin_2d                   | Δ=+0.0073 95%CI[+0.0012,+0.0135] d=+0.94 wilcoxon_p=0.188
+  quaternion_mipaim_2d       vs mipaim_unet_2d             | Δ=-0.0195 95%CI[-0.0319,-0.0070] d=-1.18 wilcoxon_p=0.125
+  quaternion_acapulco_2d     vs acapulco_2d                | Δ=-0.0135 95%CI[-0.0381,+0.0068] d=-0.45 wilcoxon_p=0.438
+  quaternion_unet_2d         vs swin_unetr_2d              | Δ=+0.0118 95%CI[-0.0259,+0.0562] d=+0.22 wilcoxon_p=1.000
+ [3D]
+  quaternion_marin_3d        vs marin_3d                   | Δ=-0.0017 95%CI[-0.0189,+0.0162] d=-0.08 wilcoxon_p=0.625
+  quaternion_mipaim_3d       vs mipaim_unet_3d             | Δ=-0.0002 95%CI[-0.0151,+0.0124] d=-0.01 wilcoxon_p=1.000
+  quaternion_acapulco_3d     vs acapulco_3d                | Δ=-0.0002 95%CI[-0.0257,+0.0253] d=-0.01 wilcoxon_p=1.000
+  quaternion_unet_3d         vs swin_unetr_3d              | Δ=-0.0043 95%CI[-0.0220,+0.0147] d=-0.18 wilcoxon_p=1.000
+
+## Pooled comparisons (per-subject means)
+
+  2D quantum/hybrid=0.7197 classical=0.7598 Δ=-0.0401 95%CI[-0.0554,-0.0245] p=0.062
+  2D quaternion=0.7608 classical=0.7598 Δ=+0.0010 95%CI[-0.0078,+0.0098] p=0.812
+  3D quantum/hybrid=0.7877 classical=0.7963 Δ=-0.0086 95%CI[-0.0214,+0.0028] p=0.438
+  3D quaternion=0.7977 classical=0.7963 Δ=+0.0015 95%CI[-0.0132,+0.0179] p=1.000
+
+## Holm-corrected p-values (headline family)
+
+  quaternion_marin_2d vs marin_2d                          raw=0.188 holm=1.000
+  qcnn_pennylane_2d vs marin_2d                            raw=0.062 holm=0.875
+  hybrid_qcnn_2d vs marin_2d                               raw=0.062 holm=0.875
+  quaternion_marin_3d vs marin_3d                          raw=0.625 holm=1.000
+  qcnn_pennylane_3d vs marin_3d                            raw=0.812 holm=1.000
+  qcnn_qiskit_3d vs classical_cnn_3d                       raw=0.438 holm=1.000
+  quaternion_marin_2d vs marin_2d                          raw=0.188 holm=1.000
+  quaternion_mipaim_2d vs mipaim_unet_2d                   raw=0.125 holm=1.000
+  quaternion_acapulco_2d vs acapulco_2d                    raw=0.438 holm=1.000
+  quaternion_unet_2d vs swin_unetr_2d                      raw=1.000 holm=1.000
+  quaternion_marin_3d vs marin_3d                          raw=0.625 holm=1.000
+  quaternion_mipaim_3d vs mipaim_unet_3d                   raw=1.000 holm=1.000
+  quaternion_acapulco_3d vs acapulco_3d                    raw=1.000 holm=1.000
+  quaternion_unet_3d vs swin_unetr_3d                      raw=1.000 holm=1.000

@@ -1,0 +1,3 @@
+- +experiment=exp_hammers
+- model=marin_hammers
+- dataset.spatial_dims=2

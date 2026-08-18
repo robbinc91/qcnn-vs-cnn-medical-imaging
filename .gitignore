@@ -67,3 +67,13 @@ datatrain/
 
 # Paper sources and build (kept local only)
 paper/
+
+# HAMMERS medical imaging data -- never commit
+datatrain_hammers/
+datatrain_hammers_full/
+
+# TensorBoard logs
+tb_logs/
+
+# Analysis archives
+runhammers/analysis/segmentation_screenshots.tar.gz
